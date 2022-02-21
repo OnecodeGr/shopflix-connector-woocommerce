@@ -1,0 +1,40 @@
+{
+  "name": "spyrmp/json-serializer-deserializer",
+  "description": "Serialize php arrays to  json. Deserialize json to php arrays.",
+  "type": "library",
+  "keywords": [
+    "json",
+    "serialize",
+    "serializer",
+    "deserialize",
+    "deserializer"
+  ],
+  "require": {
+    "php": ">=7.0.0",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "9.5.*",
+    "symfony/var-dumper": "^5.4"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Spyrmp\\JsonSerializerDeserializer\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Spyrmp\\JsonSerializerDeserializer\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit --colors=always"
+  },
+  "authors": [
+    {
+      "name": "spyrm",
+      "email": "spyros@onecode.gr"
+    }
+  ]
+}
