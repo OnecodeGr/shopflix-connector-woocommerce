@@ -88,63 +88,69 @@ class XML_generator
 
                 $variations = $product->get_available_variations();
                 foreach ($variations as $variation) {
+
+
                     $varid = $variation['variation_id'];
 
-                    if (isset($marketplaceapisettings_options['barcode_9']) && $marketplaceapisettings_options['barcode_9'] != '0') {
-
-                        $ean = get_post_meta($varid, $marketplaceapisettings_options['barcode_9'], true);
+                    if (get_post_meta($varid, '_enable_in_shopflix', true) === 'no') {
                     } else {
-                        //$ean =  get_post_meta($varid, 'ean_shopflix', true);
-                        $ean = "qwaterfilters-" . get_post_meta($variation['variation_id'], '_sku', true);
+                        if (isset($marketplaceapisettings_options['barcode_9']) && $marketplaceapisettings_options['barcode_9'] != '0') {
+
+                            $ean = get_post_meta($varid, $marketplaceapisettings_options['barcode_9'], true);
+                        } else {
+                            //$ean =  get_post_meta($varid, 'ean_shopflix', true);
+                            $ean = $_SERVER['SERVER_NAME'] . "-" . get_post_meta($variation['variation_id'], '_sku', true);
+                        }
+
+                        if (isset($marketplaceapisettings_options['mpn_7']) && $marketplaceapisettings_options['mpn_7'] != '0') {
+
+                            $mpn = get_post_meta($varid, $marketplaceapisettings_options['mpn_7'], true);
+                        } else {
+                            $mpn =  get_post_meta($varid, 'mpn_shopflix', true);
+                        }
+
+
+                        $variation_o = new WC_Product_Variation($variation['variation_id']);
+                        $var_sku = get_post_meta($variation['variation_id'], '_sku', true);
+                        $product_ar = $products->addChild('product');
+                        $product_ar->product_id =  $varid;
+                        $product_ar->sku =  $var_sku;
+                        $product_ar->mpn = $mpn;
+                        $product_ar->ean = $ean;
+                        $product_ar->name = NULL;
+                        $product_ar->name->addCData($protitle);
+                        $price = $variation['display_price'];
+                        $product_ar->addChild('price', $price);
+                        $product_ar->list_price = $variation_o->get_regular_price();
+                        $url = get_permalink($variation['variation_id']);
+                        $product_ar->link = NULL;
+                        $product_ar->link->addCData($url);
+                        if (empty(get_post_meta($varid, 'shipping_lead_time_shopflix', true))) {
+
+                            $product_ar->shipping_lead_time = 0;
+                        } else {
+
+                            $product_ar->shipping_lead_time = get_post_meta($varid, 'shipping_lead_time_shopflix', true);
+                        }
+                        $product_ar->offer_from = get_post_meta($varid, 'offer_from_shopflix', true);
+                        $product_ar->offer_to = get_post_meta($varid, 'offer_to_shopflix', true);
+                        $product_ar->offer_price = get_post_meta($varid, 'offer_price_shopflix', true);
+                        $product_ar->offer_quantity = get_post_meta($varid, 'offer_quantity_shopflix', true);
+                        $variation_o->get_stock_quantity();
+                        $product_ar->quantity = $variation_o->get_stock_quantity();
+                        $attachment_url = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full', false)[0];
+                        $product_ar->image = NULL;
+                        $product_ar->image->addCData($attachment_url);
+                        $product_ar->description = NULL;
+                        $product_ar->description->addCData($product_full_description);
+                        $product_ar->weight = $variation['weight_html'];
+                        $product_ar->manufacturer = $manufacturer_va;
+                        $product_ar->category  = NULL;
+                        $product_ar->category->addCData($this->list_product_categories($product_id));
                     }
-
-                    if (isset($marketplaceapisettings_options['mpn_7']) && $marketplaceapisettings_options['mpn_7'] != '0') {
-
-                        $mpn = get_post_meta($varid, $marketplaceapisettings_options['mpn_7'], true);
-                    } else {
-                        $mpn =  get_post_meta($varid, 'mpn_shopflix', true);
-                    }
-
-
-                    $variation_o = new WC_Product_Variation($variation['variation_id']);
-                    $var_sku = get_post_meta($variation['variation_id'], '_sku', true);
-                    $product_ar = $products->addChild('product');
-                    $product_ar->product_id =  $varid;
-                    $product_ar->sku =  $var_sku;
-                    $product_ar->mpn = $mpn;
-                    $product_ar->ean = $ean;
-                    $product_ar->name = NULL;
-                    $product_ar->name->addCData($protitle);
-                    $price = $variation['display_price'];
-                    $product_ar->addChild('price', $price);
-                    $product_ar->list_price = $variation_o->get_regular_price();
-                    $url = get_permalink($variation['variation_id']);
-                    $product_ar->link = NULL;
-                    $product_ar->link->addCData($url);
-                    if (empty(get_post_meta($varid, 'shipping_lead_time_shopflix', true))) {
-
-                        $product_ar->shipping_lead_time = 0;
-                    } else {
-
-                        $product_ar->shipping_lead_time = get_post_meta($varid, 'shipping_lead_time_shopflix', true);
-                    }
-                    $product_ar->offer_from = get_post_meta($varid, 'offer_from_shopflix', true);
-                    $product_ar->offer_to = get_post_meta($varid, 'offer_to_shopflix', true);
-                    $product_ar->offer_price = get_post_meta($varid, 'offer_price_shopflix', true);
-                    $product_ar->offer_quantity = get_post_meta($varid, 'offer_quantity_shopflix', true);
-                    $variation_o->get_stock_quantity();
-                    $product_ar->quantity = $variation_o->get_stock_quantity();
-                    $attachment_url = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full', false)[0];
-                    $product_ar->image = NULL;
-                    $product_ar->image->addCData($attachment_url);
-                    $product_ar->description = NULL;
-                    $product_ar->description->addCData($product_full_description);
-                    $product_ar->weight = $variation['weight_html'];
-                    $product_ar->manufacturer = $manufacturer_va;
-                    $product_ar->category  = NULL;
-                    $product_ar->category->addCData($this->list_product_categories($product_id));
                 }
             } else {
+
 
                 if ($product->get_regular_price() == "") {
                     $cost = $product->get_price();
@@ -152,54 +158,58 @@ class XML_generator
                     $cost = $product->get_price();
                 }
 
-
-                if (isset($marketplaceapisettings_options['barcode_9']) && $marketplaceapisettings_options['barcode_9'] != '0') {
-
-                    $ean = get_post_meta($product_id, $marketplaceapisettings_options['barcode_9'], true);
-                } else {
-                    //$ean =  get_post_meta($product_id, 'ean_shopflix', true);
-                    $ean = "qwaterfilters-" . $product->get_sku();
-                }
-                if (isset($marketplaceapisettings_options['mpn_7'])  && $marketplaceapisettings_options['mpn_7'] != '0') {
-
-                    $mpn = get_post_meta($product_id, $marketplaceapisettings_options['mpn_7'], true);
-                } else {
-                    $mpn =  get_post_meta($product_id, 'mpn_shopflix', true);
-                }
-
-
-                $product_ar = $products->addChild('product');
-                $product_ar->product_id =  $product_id;
-                $product_ar->sku = $product->get_sku();
-                $product_ar->mpn = $mpn;
-                $product_ar->ean = $ean;
-                $product_ar->name->$protitle;
-                $product_ar->addChild('price', $cost);
-                $product_ar->list_price =  $product->get_regular_price();
-                $url = get_permalink($product_id);
-                $product_ar->link = NULL;
-                $product_ar->link->addCData($url);
-                if (empty(get_post_meta($product_id, 'shipping_lead_time_shopflix', true))) {
-                    $product_ar->shipping_lead_time = 0;
+                if (get_post_meta($product_id, '_enable_in_shopflix', true) === 'no') {
                 } else {
 
-                    $product_ar->shipping_lead_time = get_post_meta($product_id, 'shipping_lead_time_shopflix', true);
-                }
 
-                $product_ar->offer_from = get_post_meta($product_id, 'offer_from_shopflix', true);
-                $product_ar->offer_to = get_post_meta($product_id, 'offer_to_shopflix', true);
-                $product_ar->offer_price = get_post_meta($product_id, 'offer_price_shopflix', true);
-                $product_ar->offer_quantity = get_post_meta($product_id, 'offer_quantity_shopflix', true);
-                $product_ar->quantity = $product->get_stock_quantity();
-                $attachment_url = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full', false)[0];
-                $product_ar->image = NULL;
-                $product_ar->image->addCData($attachment_url);
-                $product_ar->description = NULL;
-                $product_ar->description->addCData($product_full_description);
-                $product_ar->weight = $product->get_weight();
-                $product_ar->manufacturer =  $manufacturer_va;
-                $product_ar->category = NULL;
-                $product_ar->category->addCData($this->list_product_categories($product_id));
+                    if (isset($marketplaceapisettings_options['barcode_9']) && $marketplaceapisettings_options['barcode_9'] != '0') {
+
+                        $ean = get_post_meta($product_id, $marketplaceapisettings_options['barcode_9'], true);
+                    } else {
+                        //$ean =  get_post_meta($product_id, 'ean_shopflix', true);
+                        $ean = $_SERVER['SERVER_NAME'] . "-" . $product->get_sku();
+                    }
+                    if (isset($marketplaceapisettings_options['mpn_7'])  && $marketplaceapisettings_options['mpn_7'] != '0') {
+
+                        $mpn = get_post_meta($product_id, $marketplaceapisettings_options['mpn_7'], true);
+                    } else {
+                        $mpn =  get_post_meta($product_id, 'mpn_shopflix', true);
+                    }
+
+
+                    $product_ar = $products->addChild('product');
+                    $product_ar->product_id =  $product_id;
+                    $product_ar->sku = $product->get_sku();
+                    $product_ar->mpn = $mpn;
+                    $product_ar->ean = $ean;
+                    $product_ar->name->$protitle;
+                    $product_ar->addChild('price', $cost);
+                    $product_ar->list_price =  $product->get_regular_price();
+                    $url = get_permalink($product_id);
+                    $product_ar->link = NULL;
+                    $product_ar->link->addCData($url);
+                    if (empty(get_post_meta($product_id, 'shipping_lead_time_shopflix', true))) {
+                        $product_ar->shipping_lead_time = 0;
+                    } else {
+
+                        $product_ar->shipping_lead_time = get_post_meta($product_id, 'shipping_lead_time_shopflix', true);
+                    }
+
+                    $product_ar->offer_from = get_post_meta($product_id, 'offer_from_shopflix', true);
+                    $product_ar->offer_to = get_post_meta($product_id, 'offer_to_shopflix', true);
+                    $product_ar->offer_price = get_post_meta($product_id, 'offer_price_shopflix', true);
+                    $product_ar->offer_quantity = get_post_meta($product_id, 'offer_quantity_shopflix', true);
+                    $product_ar->quantity = $product->get_stock_quantity();
+                    $attachment_url = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full', false)[0];
+                    $product_ar->image = NULL;
+                    $product_ar->image->addCData($attachment_url);
+                    $product_ar->description = NULL;
+                    $product_ar->description->addCData($product_full_description);
+                    $product_ar->weight = $product->get_weight();
+                    $product_ar->manufacturer =  $manufacturer_va;
+                    $product_ar->category = NULL;
+                    $product_ar->category->addCData($this->list_product_categories($product_id));
+                }
             }
 
         endwhile;

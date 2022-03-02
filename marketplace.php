@@ -181,6 +181,17 @@ function bbloomer_add_RRP_to_products($product_id)
 
 	echo "<h3 style='font-size:22px; text-align:center'>ShopFlix Settings</h3>";
 
+	global $woocommerce, $post, $product_object;
+	$values =  get_post_meta($post->ID, '_enable_in_shopflix', true);
+	//var_dump($values);
+
+	woocommerce_wp_checkbox(array( // Checkbox.
+		'id'            => '_enable_in_shopflix',
+		'label'         => __('Enable in Shopflix', 'woocommerce'),
+		'value'         => empty($values) ? 'yes' : $values,
+		'description'   => __('Enable in Shopflix', 'woocommerce'),
+	));
+
 	woocommerce_wp_text_input(array(
 		'id' => 'ean_shopflix',
 		'class' => 'short',
@@ -234,8 +245,8 @@ function bbloomer_add_RRP_to_products($product_id)
 		),
 	));
 
-	global $woocommerce, $post, $product_object;
-	$shipping_lead_time = get_post_meta($product_id, 'shipping_lead_time_shopflix', true);
+
+	$shipping_lead_time = get_post_meta($post->ID, 'shipping_lead_time_shopflix', true);
 
 	if (!$shipping_lead_time) {
 		$shipping_lead_time = 0;
@@ -269,6 +280,14 @@ function bbloomer_save_RRP($product_id)
 	global $typenow;
 	if ('product' === $typenow) {
 		if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+		if (isset($_POST['enable_in_shopflix'])) {
+
+			update_meta_data($product_id, 'enable_in_shopflix', isset($_POST['enable_in_shopflix']) ? 'yes' : 'no');
+		}
+
+		$woocommerce_checkbox = isset($_POST['_enable_in_shopflix']) ? 'yes' : 'no';
+		update_post_meta($product_id, '_enable_in_shopflix', $woocommerce_checkbox);
+
 		if (isset($_POST['ean_shopflix'])) {
 			update_post_meta($product_id, 'ean_shopflix', $_POST['ean_shopflix']);
 		}
@@ -310,6 +329,17 @@ function market_place_add_custom_field_to_variations($loop, $variation_data, $va
 	echo '<div class="form-row form-row-full" style="padding:20px; border:2px solid red">';
 
 	echo "<h3 style='font-size:22px; text-align:center'>Shopflix Settings for Variation</h3>";
+
+	global $woocommerce, $post, $product_object;
+	$values =  get_post_meta($variation->ID, '_enable_in_shopflix', true);
+
+	woocommerce_wp_checkbox(array( // Checkbox.
+		'id'            => '_enable_in_shopflix[' . $loop . ']',
+		'label'         => __('Enable in Shopflix', 'woocommerce'),
+		'value'         => empty($values) ? 'yes' : $values,
+		'description'   => __('Enable in Shopflix', 'woocommerce'),
+	));
+
 
 	woocommerce_wp_text_input(array(
 		'id' => 'ean_shopflix[' . $loop . ']',
@@ -402,6 +432,11 @@ add_action('woocommerce_save_product_variation', 'market_place_add_save_custom_f
 
 function market_place_add_save_custom_field_variations($variation_id, $i)
 {
+
+
+	$woocommerce_checkbox = isset($_POST['_enable_in_shopflix']) ? 'yes' : 'no';
+	update_post_meta($variation_id, '_enable_in_shopflix', $woocommerce_checkbox);
+
 	$custom_field = $_POST['ean_shopflix'][$i];
 	if (isset($custom_field)) update_post_meta($variation_id, 'ean_shopflix', esc_attr($custom_field));
 
