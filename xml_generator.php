@@ -118,7 +118,7 @@ class XML_generator
                         $product_ar->mpn = $mpn;
                         $product_ar->ean = $ean;
                         $product_ar->name = NULL;
-                        $product_ar->name->addCData($protitle);
+                        $product_ar->name = $protitle;
                         $price = $variation['display_price'];
                         $product_ar->addChild('price', $price);
                         $product_ar->list_price = $variation_o->get_regular_price();
@@ -182,7 +182,7 @@ class XML_generator
                     $product_ar->sku = $product->get_sku();
                     $product_ar->mpn = $mpn;
                     $product_ar->ean = $ean;
-                    $product_ar->name->$protitle;
+                    $product_ar->name = $protitle;
                     $product_ar->addChild('price', $cost);
                     $product_ar->list_price =  $product->get_regular_price();
                     $url = get_permalink($product_id);
