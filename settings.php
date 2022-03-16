@@ -18,6 +18,22 @@ class get_data_local
 
 	public function cron_jobs()
 	{
+		if (isset($marketplaceapisettings_options['wordpress_cron_13'])) {
+			$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+			if (isset($marketplaceapisettings_options['genable_market_place_0'])) {
+				$this->update_data();
+			}
+			if (isset($marketplaceapisettings_options['generate_xml_6'])) {
+				$generate_xml = new XML_generator();
+				$generate_xml->generate_xml();
+			}
+		}
+
+		//$auto_orders = $this->auto_woocommerce();
+	}
+
+	public function manual_update()
+	{
 		$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
 		if (isset($marketplaceapisettings_options['genable_market_place_0'])) {
 			$this->update_data();
@@ -26,8 +42,6 @@ class get_data_local
 			$generate_xml = new XML_generator();
 			$generate_xml->generate_xml();
 		}
-
-		//$auto_orders = $this->auto_woocommerce();
 	}
 
 

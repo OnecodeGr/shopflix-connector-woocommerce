@@ -74,6 +74,36 @@ function Shopflix_gateway_orders_column($columns)
 }
 
 
+add_action('wp_head', 'update_shopflix_total');
+
+function update_shopflix_total()
+{
+	$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+
+	if (!isset($marketplaceapisettings_options['hidden_fordel_8']) || trim($marketplaceapisettings_options['hidden_fordel_8']) === '') {
+
+		$XML_generator = new XML_generator;
+		$random_url = $XML_generator->getRandomString();
+		$marketplaceapisettings_options['hidden_fordel_8'] =  $random_url;
+		update_option('marketplaceapisettings_option_name', $marketplaceapisettings_options);
+	} else {
+
+		$random_url = $marketplaceapisettings_options['hidden_fordel_8']; // MPN
+
+	}
+	//11435j0j
+	if (isset($_GET['spf_total'])) {
+		if ($_GET['spf_total'] == $random_url) {
+			//require('skroutz_feded/create_xml.php');
+			$orders = new get_data_local;
+			echo $orders->manual_update();
+			echo ("Success");
+		}
+	}
+}
+
+
+
 
 add_action('manage_shop_order_posts_custom_column', 'Shopflix_gateway_orders_column_content');
 function Shopflix_gateway_orders_column_content($column)
@@ -533,6 +563,7 @@ class MarketPlaceApi
 	public function update_data()
 	{
 
+		var_dump('test');
 
 
 		require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
@@ -938,6 +969,8 @@ class MarketPlaceApi
 
 			}
 		</script>
+		<?php $cron = new get_data_local();
+		$cron->update_data(); ?>
 
 		<div class="wrap">
 			<h2>ShopFlix Orders</h2>
@@ -1537,6 +1570,20 @@ class MarketPlaceApiSettings
 			'marketplaceapisettings_setting_section' // section
 		);
 
+
+
+		add_settings_field(
+			'wordpress_cron_13', // id
+			'Wordpress Cron', // title
+			array($this, 'wordpress_cron_13_callback'), // callback
+			'marketplaceapisettings-admin', // page
+			'marketplaceapisettings_setting_section' // section
+		);
+
+
+
+
+
 		add_settings_field(
 			'mpn_7', // id
 			'MPN', // title
@@ -1604,6 +1651,13 @@ class MarketPlaceApiSettings
 		if (isset($input['generate_xml_6'])) {
 			$sanitary_values['generate_xml_6'] = $input['generate_xml_6'];
 		}
+
+		if (isset($input['wordpress_cron_13'])) {
+			$sanitary_values['wordpress_cron_13'] = $input['wordpress_cron_13'];
+		}
+
+
+
 
 		if (isset($input['mpn_7'])) {
 			$sanitary_values['mpn_7'] = $input['mpn_7'];
@@ -1683,6 +1737,24 @@ class MarketPlaceApiSettings
 			isset($this->marketplaceapisettings_options['password_5']) ? esc_attr($this->marketplaceapisettings_options['password_5']) : ''
 		);
 	}
+
+
+	public function wordpress_cron_13_callback()
+	{
+		$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+		$random_url = $marketplaceapisettings_options['hidden_fordel_8']; // MPN
+
+		printf(
+			'Προσοχή! Ορισμένες εταιρίες Hosting έχουν κλειστό τον Cron.<br>' .
+				'<br>Έαν δεν ενεργοποιήσετε τον Cron του Wordpress μπορείτε να ορίσετε χειροκίνητα <br>από τον Server τον Cron να καλεί το <strong>' . get_site_url() . '/?spf_total=' . $random_url . ' </strong>κάθε 1 ώρα.<br><br>' .
+				'<input type="checkbox" name="marketplaceapisettings_option_name[wordpress_cron_13]" id="wordpress_cron_13" value="wordpress_cron_13" %s> <label for="wordpress_cron_13">Ενεργοποίηση Wordpress Cron</label>',
+			(isset($this->marketplaceapisettings_options['wordpress_cron_13']) && $this->marketplaceapisettings_options['wordpress_cron_13'] === 'wordpress_cron_13') ? 'checked' : ''
+		);
+	}
+
+
+
+
 
 	public function generate_xml_6_callback()
 	{
@@ -1807,4 +1879,272 @@ class MarketPlaceApiSettings
  * $mpn_7 = $marketplaceapisettings_options['mpn_7']; // MPN
  */
 
+
+		class Shopflix_shiiping
+		{
+			private $marketplaceapisettings_options;
+
+			public function __construct()
+			{
+				add_action('admin_menu', array($this, 'market_place_api_shopping_add_plugin_page'));
+				//add_action('admin_init', array($this, 'marketplaceapishoppings_page_init'));
+			}
+
+
+
+			public function market_place_api_shopping_add_plugin_page()
+			{
+				add_submenu_page(
+					'market-place-api',
+					'ShopFlix Shipping', // page_title
+					'ShopFlix Shippings', // menu_title
+					'manage_options', // capability
+					'shopflix-shippings', // menu_slug
+					array($this, 'marketplaceapishippings_create_admin_page') // function
+				);
+			}
+
+			public function marketplaceapishippings_create_admin_page()
+			{
+
+				$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name'); // Array of All Options
+
+				$var_ecom_enable = "disable";
+
+
+				if (array_key_exists('api_url_3', $marketplaceapisettings_options) && array_key_exists('password_5', $marketplaceapisettings_options) && array_key_exists('username_4', $marketplaceapisettings_options)) {
+
+					$api_url = $marketplaceapisettings_options['api_url_3'];
+					$username = $marketplaceapisettings_options['username_4'];
+					$password = $marketplaceapisettings_options['password_5'];
+					if (strlen($api_url) > 0 && strlen($username) > 0 && strlen($password) > 0) {
+
+
+
+
+
+
+						$connector = new Connector($username, $password, $api_url);
+
+
+						$data = $connector->getShipped();
+						var_dump($data);
+					}
+				}
+				if (array_key_exists('enable_market_place_0', $marketplaceapisettings_options)) {
+					$var_ecom_enable = "enable";
+				} // Enable Market Place
+
+
+
+
+
+				//$api->generate_xml();
+
+
+
+
 				?>
+
+		<style>
+			a.disable {
+				cursor: not-allowed;
+				opacity: 0.5;
+
+
+			}
+
+			a.details {
+				font-weight: bold;
+				background: #949494;
+				color: white;
+				font-weight: bold;
+				padding: 6px 14px;
+			}
+
+			a.accept.enable {
+
+				background: #07e842;
+				color: white;
+				font-weight: bold;
+				padding: 6px 14px;
+				text-shadow: -1px 0px 4px #929292;
+			}
+
+			a.reject.enable {
+
+				background: #e80707;
+				color: white;
+				font-weight: bold;
+				text-shadow: -1px 0px 4px #929292;
+				padding: 6px 14px;
+			}
+		</style>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+		<script>
+			jQuery(document).ready(function($) {
+
+
+
+
+				// Some event will trigger the ajax call, you can push whatever data to the server, 
+				// simply passing it to the "data" object in ajax call
+				$.ajax({
+					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
+					type: 'POST',
+					data: {
+						action: 'myaction', // this is the function in your functions.php that will be triggered
+						name: 'John',
+						age: '38'
+					},
+					success: function(data) {
+						//Do something with the result from server
+						console.log(data);
+						var json = JSON.parse(data);
+						var items = '';
+						var items_modals = '';
+
+						$.each(json, function(index, item) {
+
+
+							<?php if ($var_ecom_enable === "enable") { ?>
+								<?php if (array_key_exists('convert_to_woocommerce_orders_1', $marketplaceapisettings_options)) { ?>
+
+
+									if (item.state === "reject") {
+										items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td></td> <td></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '" class="details">Details</a></td></tr>';
+
+
+									} else if (item.woocommerce_orderid > 0) {
+
+										items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td></td> <td></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '" class="details">Details</a></td></tr>';
+
+									} else {
+										items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td><a class="reject <?php echo $var_ecom_enable ?>" href="#ex' + item.marketplace_order_id + '" rel="modal:open">Reject</a></td> <td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.marketplace_order_id + '" onclick="sendorder(this)" >Accept</a></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '"  class="details">Details</a></td></tr>';
+										items_modals += '<div id="ex' + item.marketplace_order_id + '" class="modal">  <h3>Είστε σίγουρος ότι θέλετε να ακυρώσετε την παραγγελία #' + item.marketplace_order_id + ';</h3> <p>Παρακαλώ πείτε μας τον λόγο:</p><textarea id="reject_reason' + item.marketplace_order_id + '" name="reject_reason" rows="4" cols="50"></textarea>  <a href="javascript:void(0)" order="' + item.marketplace_order_id + '" onclick="rejectorder(this)" class="reject' + item.marketplace_order_id + '">Ακύρωση Παραγγελίας</a></div>'
+
+									}
+								<?php     } else { ?>
+
+									items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td></td> <td></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '" class="details">Details</a></td></tr>';
+
+
+							<?php    }
+							} ?>
+						});
+						$(".table tbody").append(items);
+						$(".modals").append(items_modals);
+
+
+					}
+				});
+			});
+
+			function sendorder(elm) {
+
+
+				console.log(elm.getAttribute('order'));
+
+
+				jQuery.ajax({
+					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
+					type: 'POST',
+					data: {
+						action: 'accept', // this is the function in your functions.php that will be triggered
+						order: elm.getAttribute('order'),
+
+					},
+					success: function(data) {
+						//Do something with the result from server
+						console.log(data);
+						//location.reload();
+
+
+					}
+				});
+
+
+			}
+
+
+
+			function rejectorder(elm) {
+
+
+				message = jQuery('#reject_reason' + elm.getAttribute('order')).val()
+
+				jQuery.ajax({
+					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
+					type: 'POST',
+					data: {
+						action: 'reject', // this is the function in your functions.php that will be triggered
+						order: elm.getAttribute('order'),
+						message: message,
+
+					},
+					success: function(data) {
+						//Do something with the result from server
+						console.log(data);
+						//location.reload();
+
+
+					}
+				});
+
+
+			}
+		</script>
+		<?php $cron = new get_data_local();
+				$cron->update_data(); ?>
+
+		<div class="wrap">
+			<h2>ShopFlix Orders</h2>
+			<p></p>
+			<div class="modals"></div>
+			<div class="row">
+				<div class="col-md-12">
+					<table class="table">
+						<thead>
+							<tr>
+								<th scope="col">#</th>
+								<th scope="col">OrderID</th>
+								<th scope="col">Status</th>
+								<th scope="col">First Name</th>
+								<th scope="col">Last Name</th>
+								<th scope="col">Total</th>
+								<th scope="col">Reject</th>
+								<th scope="col">Accept</th>
+								<th scope="col">Details</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+
+			</div>
+
+
+			<p></p>
+			<?php settings_errors(); ?>
+
+			<div class="row">
+				<div class="col-md-6">
+
+				</div>
+
+			</div>
+
+		</div>
+<?php
+			}
+
+			public function marketplaceapishoppings_page_init()
+			{
+			}
+		}
+
+		if (is_admin())
+			$marketplaceapishippings = new Shopflix_shiiping();
+?>

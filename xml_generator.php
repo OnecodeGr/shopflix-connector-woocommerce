@@ -136,9 +136,8 @@ class XML_generator
                         $product_ar->offer_to = get_post_meta($varid, 'offer_to_shopflix', true);
                         $product_ar->offer_price = get_post_meta($varid, 'offer_price_shopflix', true);
                         $product_ar->offer_quantity = get_post_meta($varid, 'offer_quantity_shopflix', true);
-                        $variation_obj = wc_get_product($variation['variation_id']);
-                        $stock_qty = $variation_obj->get_stock_quantity();
-                        $product_ar->quantity = $stock_qty;
+                        $variation_o->get_stock_quantity();
+                        $product_ar->quantity = $variation_o->get_stock_quantity();
                         $attachment_url = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full', false)[0];
                         $product_ar->image = NULL;
                         $product_ar->image->addCData($attachment_url);
