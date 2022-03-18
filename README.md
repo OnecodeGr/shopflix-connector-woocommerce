@@ -25,6 +25,9 @@
 Έαν δεν ενεργοποιήσετε τον Cron του Wordpress μπορείτε να ορίσετε χειροκίνητα
 από τον Server τον Cron να καλεί το URL που θα δημιουργηθεί στην εγκατάσταση του Plugin κάθε 1 ώρα.
 
+ShopFlix Api Settings -> Wordpress Cron
+
+![Imgur](https://i.imgur.com/i52FoU8.png)
 
 ## 3. Δημιουργία XML
 
