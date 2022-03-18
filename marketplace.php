@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Plugin Name: ShopFlix Connector
+ * Plugin Name: ShopFlix Connector for Woocommerce
  * Plugin URI: https://zonepage.gr
  * Description: This is a connector with marketplace api
  * Author: Nikos Ziozas
  * Author URI: http://www.zonepage.gr/
- * Version: 1.0.2
+ * Version: 1.1.0
  * Text Domain: wc-marketplace-api
  * Domain Path: /languages/
  *
@@ -43,7 +43,7 @@ require "Connector/vendor/autoload.php";
 require "settings.php";
 
 
-use Onecode\MarketplaceConnector\Library\Connector;
+use Onecode\ShopFlixConnector\Library\Connector;
 
 
 add_action('wp_enqueue_scripts', 'so_enqueue_scripts');
@@ -142,6 +142,19 @@ function so_wp_ajax_function()
 }
 
 
+add_action("wp_ajax_myaction_shipping", "so_wp_ajax_function_shipping");
+add_action("wp_ajax_nopriv_myaction_shipping", "so_wp_ajax_function_shipping");
+function so_wp_ajax_function_shipping()
+{
+	//DO whatever you want with data posted
+	//To send back a response you have to echo the result!
+	$orders = new get_data_local;
+	echo $orders->get_data_shippings();
+
+	wp_die(); // ajax call must die to avoid trailing 0 in your response
+}
+
+
 add_action("wp_ajax_readyship", "so_wp_ajax_readyship");
 add_action("wp_ajax_nopriv_readyship", "so_wp_ajax_readyship");
 function so_wp_ajax_readyship()
@@ -185,6 +198,20 @@ function so_wp_ajax_accept()
 }
 
 
+add_action("wp_ajax_print_voucher", "so_wp_ajax_print_voucher");
+add_action("wp_ajax_nopriv_print_voucher", "so_wp_ajax_print_voucher");
+function so_wp_ajax_print_voucher()
+{
+	//DO whatever you want with data posted
+	//To send back a response you have to echo the result!
+	$ship_id = $_POST['order'];
+	$orders = new get_data_local;
+	echo $orders->voucher_print($ship_id);
+
+	wp_die(); // ajax call must die to avoid trailing 0 in your response
+}
+
+
 if (!wp_next_scheduled('shopflix_xml_hourly_event_test')) {
 	wp_schedule_event(time(), 'hourly', 'shopflix_xml_hourly_event_test');
 }
@@ -197,9 +224,6 @@ function shopflix_xml_do_this_hourly_test()
 
 	$cron = new get_data_local();
 	$cron->cron_jobs();
-
-
-	wp_schedule_event(time(), 'hourly', 'shopflix_xml_hourly_event_test');
 }
 
 
@@ -531,16 +555,12 @@ class MarketPlaceApi
 
 	public function remove_schedule()
 	{
-		wp_clear_scheduled_hook('isa_add_every_three_minutes_data');
-		add_action('isa_add_every_three_minutes_data',  array($this, 'update_data'));
+
+		wp_clear_scheduled_hook('shopflix_xml_hourly_event_test');
 	}
 
 	public function register_schedule()
 	{
-
-
-		wp_schedule_event(time(), '5min',  'isa_add_every_three_minutes_data');
-		add_action('isa_add_every_three_minutes_data',  array($this, 'update_data'));
 	}
 
 	public function my_cron_schedules($schedules)
@@ -563,7 +583,7 @@ class MarketPlaceApi
 	public function update_data()
 	{
 
-		var_dump('test');
+		//var_dump('test');
 
 
 		require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
@@ -1021,7 +1041,7 @@ class MarketPlaceApi
 		//var_dump($hook);
 		// your-slug => The slug name to refer to this menu used in "add_submenu_page"
 		// tools_page => refers to Tools top menu, so it's a Tools' sub-menu page
-		if ('toplevel_page_market-place-api' != $hook && 'market-place-api_page_market-place-api-settings' != $hook && 'admin_page_market-place-order' != $hook) {
+		if ('toplevel_page_market-place-api' != $hook && 'market-place-api_page_market-place-api-settings' != $hook && 'admin_page_market-place-order' != $hook && 'shopflix_page_shopflix-shippings' != $hook) {
 			return;
 		}
 
@@ -1554,7 +1574,7 @@ class MarketPlaceApiSettings
 
 		add_settings_field(
 			'password_5', // id
-			'Password', // title
+			'API KEY', // title
 			array($this, 'password_5_callback'), // callback
 			'marketplaceapisettings-admin', // page
 			'marketplaceapisettings_setting_section' // section
@@ -1884,9 +1904,12 @@ class MarketPlaceApiSettings
 		{
 			private $marketplaceapisettings_options;
 
+
+
 			public function __construct()
 			{
 				add_action('admin_menu', array($this, 'market_place_api_shopping_add_plugin_page'));
+				//add_action('admin_enqueue_scripts', array($this, 'cstm_css_and_js'));
 				//add_action('admin_init', array($this, 'marketplaceapishoppings_page_init'));
 			}
 
@@ -1912,25 +1935,6 @@ class MarketPlaceApiSettings
 				$var_ecom_enable = "disable";
 
 
-				if (array_key_exists('api_url_3', $marketplaceapisettings_options) && array_key_exists('password_5', $marketplaceapisettings_options) && array_key_exists('username_4', $marketplaceapisettings_options)) {
-
-					$api_url = $marketplaceapisettings_options['api_url_3'];
-					$username = $marketplaceapisettings_options['username_4'];
-					$password = $marketplaceapisettings_options['password_5'];
-					if (strlen($api_url) > 0 && strlen($username) > 0 && strlen($password) > 0) {
-
-
-
-
-
-
-						$connector = new Connector($username, $password, $api_url);
-
-
-						$data = $connector->getShipped();
-						var_dump($data);
-					}
-				}
 				if (array_key_exists('enable_market_place_0', $marketplaceapisettings_options)) {
 					$var_ecom_enable = "enable";
 				} // Enable Market Place
@@ -1994,7 +1998,7 @@ class MarketPlaceApiSettings
 					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
 					type: 'POST',
 					data: {
-						action: 'myaction', // this is the function in your functions.php that will be triggered
+						action: 'myaction_shipping', // this is the function in your functions.php that will be triggered
 						name: 'John',
 						age: '38'
 					},
@@ -2009,28 +2013,18 @@ class MarketPlaceApiSettings
 
 
 							<?php if ($var_ecom_enable === "enable") { ?>
-								<?php if (array_key_exists('convert_to_woocommerce_orders_1', $marketplaceapisettings_options)) { ?>
 
 
-									if (item.state === "reject") {
-										items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td></td> <td></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '" class="details">Details</a></td></tr>';
+								if (item.track_number === "") {
+									items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)" >Print Voucher</a></td></tr>';
 
 
-									} else if (item.woocommerce_orderid > 0) {
+								} else {
 
-										items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td></td> <td></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '" class="details">Details</a></td></tr>';
+									items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)" >Print Voucher</a></td></tr>';
 
-									} else {
-										items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td><a class="reject <?php echo $var_ecom_enable ?>" href="#ex' + item.marketplace_order_id + '" rel="modal:open">Reject</a></td> <td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.marketplace_order_id + '" onclick="sendorder(this)" >Accept</a></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '"  class="details">Details</a></td></tr>';
-										items_modals += '<div id="ex' + item.marketplace_order_id + '" class="modal">  <h3>Είστε σίγουρος ότι θέλετε να ακυρώσετε την παραγγελία #' + item.marketplace_order_id + ';</h3> <p>Παρακαλώ πείτε μας τον λόγο:</p><textarea id="reject_reason' + item.marketplace_order_id + '" name="reject_reason" rows="4" cols="50"></textarea>  <a href="javascript:void(0)" order="' + item.marketplace_order_id + '" onclick="rejectorder(this)" class="reject' + item.marketplace_order_id + '">Ακύρωση Παραγγελίας</a></div>'
-
-									}
-								<?php     } else { ?>
-
-									items += '<tr>      <th scope="row">' + item.marketplace_order_id + '</th>       <td>' + item.marketplace_order_id + '</td>       <td>' + item.state + '</td> <td>' + item.customer_firstname + '</td>       <td>' + item.customer_lastname + '</td>   <td>' + item.total_paid + '</td>  <td></td> <td></td><td><a href="<?php echo get_site_url(); ?>/wp-admin/admin.php?page=market-place-order&orderid=' + item.marketplace_order_id + '" class="details">Details</a></td></tr>';
-
-
-							<?php    }
+								}
+							<?php
 							} ?>
 						});
 						$(".table tbody").append(items);
@@ -2041,7 +2035,7 @@ class MarketPlaceApiSettings
 				});
 			});
 
-			function sendorder(elm) {
+			function printvpucher(elm) {
 
 
 				console.log(elm.getAttribute('order'));
@@ -2051,13 +2045,15 @@ class MarketPlaceApiSettings
 					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
 					type: 'POST',
 					data: {
-						action: 'accept', // this is the function in your functions.php that will be triggered
+						action: 'print_voucher', // this is the function in your functions.php that will be triggered
 						order: elm.getAttribute('order'),
 
 					},
 					success: function(data) {
 						//Do something with the result from server
+
 						console.log(data);
+						window.location = data;
 						//location.reload();
 
 
@@ -2096,7 +2092,9 @@ class MarketPlaceApiSettings
 			}
 		</script>
 		<?php $cron = new get_data_local();
-				$cron->update_data(); ?>
+				$cron->get_shippings();
+				//var_dump($cron->get_complete());
+		?>
 
 		<div class="wrap">
 			<h2>ShopFlix Orders</h2>
@@ -2109,13 +2107,13 @@ class MarketPlaceApiSettings
 							<tr>
 								<th scope="col">#</th>
 								<th scope="col">OrderID</th>
-								<th scope="col">Status</th>
+								<th scope="col">Shipping Id</th>
 								<th scope="col">First Name</th>
 								<th scope="col">Last Name</th>
-								<th scope="col">Total</th>
-								<th scope="col">Reject</th>
-								<th scope="col">Accept</th>
-								<th scope="col">Details</th>
+								<th scope="col">Status</th>
+								<th scope="col">Track Number</th>
+								<th scope="col">Track Number</th>
+								<th scope="col">Voucher</th>
 							</tr>
 						</thead>
 						<tbody>
