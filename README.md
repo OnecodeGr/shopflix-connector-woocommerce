@@ -20,6 +20,15 @@
 
 ![Imgur](https://i.imgur.com/i52FoU8.png)
 
+Προσοχή! Ορισμένες εταιρίες Hosting έχουν κλειστό τον Cron.
+
+Έαν δεν ενεργοποιήσετε τον Cron του Wordpress μπορείτε να ορίσετε χειροκίνητα
+από τον Server τον Cron να καλεί το URL που θα δημιουργηθεί στην εγκατάσταση του Plugin κάθε 1 ώρα.
+
+ShopFlix Api Settings -> Wordpress Cron
+
+![Imgur](https://i.imgur.com/i7XVJuo.png)
+
 ## 3. Δημιουργία XML
 
 Ενεργοποιώντας την λειτουργία XML δημιουργούνται τα 2 XML που είναι απαραίτητα για την εμφάνιση των προϊόντων στο ShopFlix. Τα XML ανανεώνονται κάθε 15 λεπτά.
