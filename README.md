@@ -27,7 +27,7 @@
 
 ShopFlix Api Settings -> Wordpress Cron
 
-![Imgur](https://i.imgur.com/i52FoU8.png)
+![Imgur](https://imgur.com/i7XVJuo)
 
 ## 3. Δημιουργία XML
 
