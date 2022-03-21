@@ -110,7 +110,7 @@ class get_data_local
 
 							foreach ($addresses as $addresse) {
 
-								$sql_items = "INSERT INTO " . $wp_track_table_addresse . " (`marketplace_order_id`, `firstname`, `lastname`, `postcode`, `telephone`, `street`, `city`, `email`, `country_id`, `address_type`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "','" . $addresse['firstname'] . "', '" . $addresse['lastname'] . "', '" . $addresse['postcode'] . "', '" . $addresse['telephone'] . "', '" . $addresse['street'] . "', '" . $addresse['city'] . "', '" . $addresse['email'] . "', '" . $addresse['country_id'] . "', '" . $addresse['address_type'] . "')";
+								$sql_items = "INSERT INTO " . $wp_track_table_addresse . " (`marketplace_order_id`, `firstname`, `lastname`, `postcode`, `telephone`, `street`, `city`, `email`, `country_id`, `address_type`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "','" . $addresse['firstname'] . "', '" . $addresse['lastname'] . "', '" . $addresse['postcode'] . "', '" . $addresse['telephone'] . "', '" . $addresse['street'] . "', '" . $addresse['city'] . "', '" . $addresse['email'] . "', '" . $addresse['country_id'] . "', '" . $addresse['address_type'] . "')";
 
 								dbDelta($sql_items);
 							}
