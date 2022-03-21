@@ -6,7 +6,7 @@
  * Description: This is a connector with marketplace api
  * Author: Nikos Ziozas
  * Author URI: http://www.zonepage.gr/
- * Version: 1.1.0
+ * Version: 1.1.2
  * Text Domain: wc-marketplace-api
  * Domain Path: /languages/
  *
@@ -553,10 +553,12 @@ class MarketPlaceApi
 	}
 
 
+
 	public function remove_schedule()
 	{
 
 		wp_clear_scheduled_hook('shopflix_xml_hourly_event_test');
+		$this->remove_plugin_database_table();
 	}
 
 	public function register_schedule()
@@ -653,8 +655,45 @@ class MarketPlaceApi
 		}
 	}
 
+	public function remove_plugin_database_table()
+	{
+		global $table_prefix, $wpdb;
+		$tblname = 'onecode_marketplace_order';
+		$wp_track_table = $table_prefix . "$tblname";
+		$sql = "DROP TABLE IF EXISTS $wp_track_table";
+		$wpdb->query($sql);
+		delete_option("devnote_plugin_db_version");
 
+		$tblname_items = 'onecode_marketplace_order_item';
+		$wp_track_table_items = $table_prefix . "$tblname_items";
+		$sql = "DROP TABLE IF EXISTS $wp_track_table_items";
+		$wpdb->query($sql);
+		delete_option("devnote_plugin_db_version");
 
+		$tblname_addresses = 'onecode_marketplace_order_addresses';
+		$wp_track_table_addresse = $table_prefix . "$tblname_addresses";
+		$sql = "DROP TABLE IF EXISTS $wp_track_table_addresse";
+		$wpdb->query($sql);
+		delete_option("devnote_plugin_db_version");
+
+		$tblname_shippment = 'onecode_shopflix_shippment';
+		$wp_track_table_shippment = $table_prefix . "$tblname_shippment";
+		$sql = "DROP TABLE IF EXISTS $wp_track_table_shippment";
+		$wpdb->query($sql);
+		delete_option("devnote_plugin_db_version");
+
+		$tblname_shippment_item = 'onecode_shopflix_shippment_item';
+		$wp_track_table_shippment_item = $table_prefix . "$tblname_shippment_item";
+		$sql = "DROP TABLE IF EXISTS $wp_track_table_shippment_item";
+		$wpdb->query($sql);
+		delete_option("devnote_plugin_db_version");
+
+		$tblname_shippment_track = 'onecode_shopflix_shippment_track';
+		$wp_track_table_shippment_track = $table_prefix . "$tblname_shippment_track";
+		$sql = "DROP TABLE IF EXISTS $wp_track_table_shippment_track";
+		$wpdb->query($sql);
+		delete_option("devnote_plugin_db_version");
+	}
 	public function create_plugin_database_table()
 	{
 		global $table_prefix, $wpdb;

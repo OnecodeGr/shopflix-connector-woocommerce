@@ -86,14 +86,14 @@ class get_data_local
 
 					foreach ($data as $ordder) {
 						$order_exists = $wpdb->get_var(
-							$wpdb->prepare("SELECT `marketplace_order_id` FROM " . $wp_track_table . "  WHERE `marketplace_order_id` = %d", $ordder['order']['marketplace_order_id'])
+							$wpdb->prepare("SELECT `marketplace_order_id` FROM " . $wp_track_table . "  WHERE `marketplace_order_id` = %d", $ordder['order']['shopflix_order_id'])
 						);
 
 						if ($order_exists) {
 						} else {
 
 							//print_r($ordder['order']['marketplace_order_id']);
-							$sql = "INSERT INTO " . $wp_track_table . " (`marketplace_order_id`, `increment_id`, `state`, `customer_firstname`, `customer_lastname`, `subtotal`, `discount_amount`, `total_paid`, `customer_note`,  `woocommerce_orderid`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "', '" . $ordder['order']['increment_id'] . "', '" . $ordder['order']['status'] . "', '" . $ordder['order']['customer_firstname'] . "', '" . $ordder['order']['customer_lastname'] . "', '" . $ordder['order']['subtotal'] . "', '" . $ordder['order']['discount_amount'] . "', '" . $ordder['order']['total_paid'] . "', '" . $ordder['order']['customer_note'] . "', '0') on duplicate key update total_paid = values(total_paid);";
+							$sql = "INSERT INTO " . $wp_track_table . " (`marketplace_order_id`, `increment_id`, `state`, `customer_firstname`, `customer_lastname`, `subtotal`, `discount_amount`, `total_paid`, `customer_note`,  `woocommerce_orderid`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "', '" . $ordder['order']['increment_id'] . "', '" . $ordder['order']['status'] . "', '" . $ordder['order']['customer_firstname'] . "', '" . $ordder['order']['customer_lastname'] . "', '" . $ordder['order']['subtotal'] . "', '" . $ordder['order']['discount_amount'] . "', '" . $ordder['order']['total_paid'] . "', '" . $ordder['order']['customer_note'] . "', '0') on duplicate key update total_paid = values(total_paid);";
 
 							dbDelta($sql);
 
@@ -101,7 +101,7 @@ class get_data_local
 
 							foreach ($items as $item) {
 
-								$sql_items = "INSERT INTO " . $wp_track_table_items . " (`marketplace_order_id`, `sku`, `price`, `qnt`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "','" . $item['sku'] . "', '" . $item['price'] . "', '" . $item['qty'] . "')";
+								$sql_items = "INSERT INTO " . $wp_track_table_items . " (`marketplace_order_id`, `sku`, `price`, `qnt`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "','" . $item['sku'] . "', '" . $item['price'] . "', '" . $item['qty'] . "')";
 
 								dbDelta($sql_items);
 							}
