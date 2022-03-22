@@ -110,7 +110,7 @@ class get_data_local
 
 							foreach ($addresses as $addresse) {
 
-								$sql_items = "INSERT INTO " . $wp_track_table_addresse . " (`marketplace_order_id`, `firstname`, `lastname`, `postcode`, `telephone`, `street`, `city`, `email`, `country_id`, `address_type`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "','" . $addresse['firstname'] . "', '" . $addresse['lastname'] . "', '" . $addresse['postcode'] . "', '" . $addresse['telephone'] . "', '" . $addresse['street'] . "', '" . $addresse['city'] . "', '" . $addresse['email'] . "', '" . $addresse['country_id'] . "', '" . $addresse['address_type'] . "')";
+								$sql_items = "INSERT INTO " . $wp_track_table_addresse . " (`marketplace_order_id`, `firstname`, `lastname`, `postcode`, `telephone`, `street`, `city`, `email`, `country_id`, `address_type`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "','" . $addresse['firstname'] . "', '" . $addresse['lastname'] . "', '" . $addresse['postcode'] . "', '" . $addresse['telephone'] . "', '" . $addresse['street'] . "', '" . $addresse['city'] . "', '" . $addresse['email'] . "', '" . $addresse['country_id'] . "', '" . $addresse['address_type'] . "')";
 
 								dbDelta($sql_items);
 							}
@@ -350,7 +350,7 @@ class get_data_local
 			foreach ($data as $order) {
 
 				$order_exists = $wpdb->get_var(
-					$wpdb->prepare("SELECT `marketplace_order_id` FROM " . $wp_track_table . "  WHERE `marketplace_order_id` = %d", $order['order']['marketplace_order_id'])
+					$wpdb->prepare("SELECT `marketplace_order_id` FROM " . $wp_track_table . "  WHERE `marketplace_order_id` = %d", $order['order']['shopflix_order_id'])
 				);
 
 				if ($order_exists) {
@@ -435,6 +435,15 @@ class get_data_local
 
 	public function voucher_print($shipmentId)
 	{
+		$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+		if (isset($marketplaceapisettings_options['print_19'])) {
+
+			$print_format = $marketplaceapisettings_options['print_19'];
+		} else {
+			//$ean =  get_post_meta($varid, 'ean_shopflix', true);
+			$print_format = "pdf";
+		}
+
 		try {
 			if ($shipmentId) {
 				global $table_prefix, $wpdb;
@@ -451,9 +460,9 @@ class get_data_local
 
 					foreach ($post_id as $post_id_order) {
 						if ($post_id_order->track_number) {
-							$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+
 							$connector = new Connector($marketplaceapisettings_options['username_4'], $marketplaceapisettings_options['password_5'], $marketplaceapisettings_options['api_url_3']);
-							$voucherPdf = $connector->printVoucher($post_id_order->track_number);
+							$voucherPdf = $connector->printVoucher($post_id_order->track_number, $print_format);
 							$fileContent = base64_decode($voucherPdf['Voucher']);
 							$DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
 							$pdf_base64 = $DOCUMENT_ROOT . '/wp-content/uploads/' . $post_id_order->track_number . '.pdf';
@@ -500,7 +509,7 @@ class get_data_local
 						$rez = $wpdb->query($sql);
 					}
 
-					$voucherPdf = $connector->printVoucher($voucher);
+					$voucherPdf = $connector->printVoucher($voucher, $print_format);
 					$fileContent = base64_decode($voucherPdf['Voucher']);
 					$DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
 					$pdf_base64 = $DOCUMENT_ROOT . '/wp-content/uploads/' . $voucher . '.pdf';

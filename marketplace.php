@@ -6,7 +6,7 @@
  * Description: This is a connector with marketplace api
  * Author: Nikos Ziozas
  * Author URI: http://www.zonepage.gr/
- * Version: 1.1.2
+ * Version: 1.1.3
  * Text Domain: wc-marketplace-api
  * Domain Path: /languages/
  *
@@ -620,14 +620,14 @@ class MarketPlaceApi
 
 					foreach ($data as $ordder) {
 						$order_exists = $wpdb->get_var(
-							$wpdb->prepare("SELECT `marketplace_order_id` FROM " . $wp_track_table . "  WHERE `marketplace_order_id` = %d", $ordder['order']['marketplace_order_id'])
+							$wpdb->prepare("SELECT `marketplace_order_id` FROM " . $wp_track_table . "  WHERE `marketplace_order_id` = %d", $ordder['order']['shopflix_order_id'])
 						);
 
 						if ($order_exists) {
 						} else {
 
 							//print_r($ordder['order']['marketplace_order_id']);
-							$sql = "INSERT INTO " . $wp_track_table . " (`marketplace_order_id`, `increment_id`, `state`, `customer_firstname`, `customer_lastname`, `subtotal`, `discount_amount`, `total_paid`, `customer_note`,  `woocommerce_orderid`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "', '" . $ordder['order']['increment_id'] . "', '" . $ordder['order']['status'] . "', '" . $ordder['order']['customer_firstname'] . "', '" . $ordder['order']['customer_lastname'] . "', '" . $ordder['order']['subtotal'] . "', '" . $ordder['order']['discount_amount'] . "', '" . $ordder['order']['total_paid'] . "', '" . $ordder['order']['customer_note'] . "', '0') on duplicate key update total_paid = values(total_paid);";
+							$sql = "INSERT INTO " . $wp_track_table . " (`marketplace_order_id`, `increment_id`, `state`, `customer_firstname`, `customer_lastname`, `subtotal`, `discount_amount`, `total_paid`, `customer_note`,  `woocommerce_orderid`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "', '" . $ordder['order']['increment_id'] . "', '" . $ordder['order']['status'] . "', '" . $ordder['order']['customer_firstname'] . "', '" . $ordder['order']['customer_lastname'] . "', '" . $ordder['order']['subtotal'] . "', '" . $ordder['order']['discount_amount'] . "', '" . $ordder['order']['total_paid'] . "', '" . $ordder['order']['customer_note'] . "', '0') on duplicate key update total_paid = values(total_paid);";
 
 							dbDelta($sql);
 
@@ -635,7 +635,7 @@ class MarketPlaceApi
 
 							foreach ($items as $item) {
 
-								$sql_items = "INSERT INTO " . $wp_track_table_items . " (`marketplace_order_id`, `sku`, `price`, `qnt`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "','" . $item['sku'] . "', '" . $item['price'] . "', '" . $item['qty'] . "')";
+								$sql_items = "INSERT INTO " . $wp_track_table_items . " (`marketplace_order_id`, `sku`, `price`, `qnt`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "','" . $item['sku'] . "', '" . $item['price'] . "', '" . $item['qty'] . "')";
 
 								dbDelta($sql_items);
 							}
@@ -644,7 +644,7 @@ class MarketPlaceApi
 
 							foreach ($addresses as $addresse) {
 
-								$sql_items = "INSERT INTO " . $wp_track_table_addresse . " (`marketplace_order_id`, `firstname`, `lastname`, `postcode`, `telephone`, `street`, `city`, `email`, `country_id`, `address_type`) VALUES ('" . $ordder['order']['marketplace_order_id'] . "','" . $addresse['firstname'] . "', '" . $addresse['lastname'] . "', '" . $addresse['postcode'] . "', '" . $addresse['telephone'] . "', '" . $addresse['street'] . "', '" . $addresse['city'] . "', '" . $addresse['email'] . "', '" . $addresse['country_id'] . "', '" . $addresse['address_type'] . "')";
+								$sql_items = "INSERT INTO " . $wp_track_table_addresse . " (`marketplace_order_id`, `firstname`, `lastname`, `postcode`, `telephone`, `street`, `city`, `email`, `country_id`, `address_type`) VALUES ('" . $ordder['order']['shopflix_order_id'] . "','" . $addresse['firstname'] . "', '" . $addresse['lastname'] . "', '" . $addresse['postcode'] . "', '" . $addresse['telephone'] . "', '" . $addresse['street'] . "', '" . $addresse['city'] . "', '" . $addresse['email'] . "', '" . $addresse['country_id'] . "', '" . $addresse['address_type'] . "')";
 
 								dbDelta($sql_items);
 							}
@@ -1674,6 +1674,15 @@ class MarketPlaceApiSettings
 			'marketplaceapisettings-admin', // page
 			'marketplaceapisettings_setting_section' // section
 		);
+
+
+		add_settings_field(
+			'print_19', // id
+			'Select Voucher Print', // title
+			array($this, 'print_19_callback'), // callback
+			'marketplaceapisettings-admin', // page
+			'marketplaceapisettings_setting_section' // section
+		);
 	}
 
 	public function marketplaceapisettings_sanitize($input)
@@ -1724,6 +1733,10 @@ class MarketPlaceApiSettings
 
 		if (isset($input['barcode_9'])) {
 			$sanitary_values['barcode_9'] = $input['barcode_9'];
+		}
+
+		if (isset($input['print_19'])) {
+			$sanitary_values['print_19'] = $input['print_19'];
 		}
 
 		if (isset($input['manufacturer_10'])) {
@@ -1894,38 +1907,60 @@ class MarketPlaceApiSettings
 		?> <?php
 		}
 
-
-		public function manufacturer_10_callback()
+		public function print_19_callback()
 		{
-
 			$meta_keys = get_meta_keys();
-			if (isset($this->marketplaceapisettings_options['manufacturer_10'])) {
-				$custom_mpn = $this->marketplaceapisettings_options['manufacturer_10'];
+			if (isset($this->marketplaceapisettings_options['print_19'])) {
+				$custom_mpn = $this->marketplaceapisettings_options['print_19'];
 			}
 
 
 
-			echo '<select  name="marketplaceapisettings_option_name[manufacturer_10]" id="manufacturer_10">';
-			echo "<option value='0'>" . __('-Default-', 'shopflix-woocommerce-feed') . "</option>";
-
-			foreach ($meta_keys as $key => $metaKey) {
-				$selected = false;
-				if ($custom_mpn == $metaKey) {
-					$selected = true;
-				}
-
-				echo "<option value='" . esc_html($metaKey) . "' " . selected($selected, true, false) . ">" . esc_html($metaKey) . "</option>";
-			}
+			echo '<select  name="marketplaceapisettings_option_name[print_19]" id="print_19">';
+			echo "<option value='pdf'>Courier Center Labeled</option>";
+			echo "<option value='clean'>Courier Center Standard</option>";
+			echo "<option value='singleclean'>Courier Center Standard ( 1 tracking voucher per page )</option>";
+			echo "<option value='singlepdf'>Courier Center Labeled ( 1 tracking voucher per page )</option>";
+			echo "<option value='singlepdf_100x150'>SHOPFLIX Labeled 100x150</option>";
+			echo "<option value='singlepdf_100x170'>SHOPFLIX Labeled 100x170</option>";
 			echo '</select>';
 
 
 			?> <?php
 			}
-		}
-		if (is_admin())
-			$marketplaceapisettings = new MarketPlaceApiSettings();
 
-		/* 
+
+			public function manufacturer_10_callback()
+			{
+
+				$meta_keys = get_meta_keys();
+				if (isset($this->marketplaceapisettings_options['manufacturer_10'])) {
+					$custom_mpn = $this->marketplaceapisettings_options['manufacturer_10'];
+				}
+
+
+
+				echo '<select  name="marketplaceapisettings_option_name[manufacturer_10]" id="manufacturer_10">';
+				echo "<option value='0'>" . __('-Default-', 'shopflix-woocommerce-feed') . "</option>";
+
+				foreach ($meta_keys as $key => $metaKey) {
+					$selected = false;
+					if ($custom_mpn == $metaKey) {
+						$selected = true;
+					}
+
+					echo "<option value='" . esc_html($metaKey) . "' " . selected($selected, true, false) . ">" . esc_html($metaKey) . "</option>";
+				}
+				echo '</select>';
+
+
+				?> <?php
+				}
+			}
+			if (is_admin())
+				$marketplaceapisettings = new MarketPlaceApiSettings();
+
+			/* 
  * Retrieve this value with:
  * $marketplaceapisettings_options = get_option( 'marketplaceapisettings_option_name' ); // Array of All Options
  * $enable_market_place_0 = $marketplaceapisettings_options['enable_market_place_0']; // Enable Market Place
@@ -1939,55 +1974,55 @@ class MarketPlaceApiSettings
  */
 
 
-		class Shopflix_shiiping
-		{
-			private $marketplaceapisettings_options;
-
-
-
-			public function __construct()
+			class Shopflix_shiiping
 			{
-				add_action('admin_menu', array($this, 'market_place_api_shopping_add_plugin_page'));
-				//add_action('admin_enqueue_scripts', array($this, 'cstm_css_and_js'));
-				//add_action('admin_init', array($this, 'marketplaceapishoppings_page_init'));
-			}
+				private $marketplaceapisettings_options;
 
 
 
-			public function market_place_api_shopping_add_plugin_page()
-			{
-				add_submenu_page(
-					'market-place-api',
-					'ShopFlix Shipping', // page_title
-					'ShopFlix Shippings', // menu_title
-					'manage_options', // capability
-					'shopflix-shippings', // menu_slug
-					array($this, 'marketplaceapishippings_create_admin_page') // function
-				);
-			}
-
-			public function marketplaceapishippings_create_admin_page()
-			{
-
-				$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name'); // Array of All Options
-
-				$var_ecom_enable = "disable";
-
-
-				if (array_key_exists('enable_market_place_0', $marketplaceapisettings_options)) {
-					$var_ecom_enable = "enable";
-				} // Enable Market Place
+				public function __construct()
+				{
+					add_action('admin_menu', array($this, 'market_place_api_shopping_add_plugin_page'));
+					//add_action('admin_enqueue_scripts', array($this, 'cstm_css_and_js'));
+					//add_action('admin_init', array($this, 'marketplaceapishoppings_page_init'));
+				}
 
 
 
+				public function market_place_api_shopping_add_plugin_page()
+				{
+					add_submenu_page(
+						'market-place-api',
+						'ShopFlix Shipping', // page_title
+						'ShopFlix Shippings', // menu_title
+						'manage_options', // capability
+						'shopflix-shippings', // menu_slug
+						array($this, 'marketplaceapishippings_create_admin_page') // function
+					);
+				}
+
+				public function marketplaceapishippings_create_admin_page()
+				{
+
+					$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name'); // Array of All Options
+
+					$var_ecom_enable = "disable";
 
 
-				//$api->generate_xml();
+					if (array_key_exists('enable_market_place_0', $marketplaceapisettings_options)) {
+						$var_ecom_enable = "enable";
+					} // Enable Market Place
 
 
 
 
-				?>
+
+					//$api->generate_xml();
+
+
+
+
+					?>
 
 		<style>
 			a.disable {
@@ -2131,8 +2166,8 @@ class MarketPlaceApiSettings
 			}
 		</script>
 		<?php $cron = new get_data_local();
-				$cron->get_shippings();
-				//var_dump($cron->get_complete());
+					$cron->get_shippings();
+					//var_dump($cron->get_complete());
 		?>
 
 		<div class="wrap">
@@ -2175,13 +2210,13 @@ class MarketPlaceApiSettings
 
 		</div>
 <?php
+				}
+
+				public function marketplaceapishoppings_page_init()
+				{
+				}
 			}
 
-			public function marketplaceapishoppings_page_init()
-			{
-			}
-		}
-
-		if (is_admin())
-			$marketplaceapishippings = new Shopflix_shiiping();
+			if (is_admin())
+				$marketplaceapishippings = new Shopflix_shiiping();
 ?>
