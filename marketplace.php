@@ -2217,6 +2217,7 @@ class MarketPlaceApiSettings
 				}
 			}
 
+
 			if (is_admin())
 				$marketplaceapishippings = new Shopflix_shiiping();
 ?>
