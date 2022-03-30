@@ -6,7 +6,7 @@
  * Description: This is a connector with marketplace api
  * Author: Nikos Ziozas
  * Author URI: http://www.zonepage.gr/
- * Version: 1.1.3
+ * Version: 1.1.4
  * Text Domain: wc-marketplace-api
  * Domain Path: /languages/
  *
@@ -46,8 +46,8 @@ require "settings.php";
 use Onecode\ShopFlixConnector\Library\Connector;
 
 
-add_action('wp_enqueue_scripts', 'so_enqueue_scripts');
-function so_enqueue_scripts()
+add_action('wp_enqueue_scripts', 'shopflix_so_enqueue_scripts');
+function shopflix_so_enqueue_scripts()
 {
 	wp_enqueue_script('ajaxHandle');
 	wp_localize_script(
@@ -227,9 +227,9 @@ function shopflix_xml_do_this_hourly_test()
 }
 
 
-add_action('woocommerce_product_options_pricing', 'bbloomer_add_RRP_to_products');
+add_action('woocommerce_product_options_pricing', 'shopflix_add_RRP_to_products');
 
-function bbloomer_add_RRP_to_products($product_id)
+function shopflix_add_RRP_to_products($product_id)
 {
 	echo '<div class="form-row form-row-full" style="padding:20px; border:2px solid red; max-width: 588px;">';
 
@@ -327,9 +327,9 @@ function bbloomer_add_RRP_to_products($product_id)
 // -----------------------------------------
 // 2. Save RRP field via custom field
 
-add_action('save_post_product', 'bbloomer_save_RRP');
+add_action('save_post_product', 'shopflix_save_RRP');
 
-function bbloomer_save_RRP($product_id)
+function shopflix_save_RRP($product_id)
 {
 	global $typenow;
 	if ('product' === $typenow) {

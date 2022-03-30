@@ -251,8 +251,11 @@ class get_data_local
 			'country'    =>  $post_id_addresse[0]->country_id
 		);
 
-		$order = wc_create_order();
-
+		$default_args = array(
+			'status'        => 'processing',
+		);
+		$order = wc_create_order($default_args);
+		$order->set_customer_id(0);
 
 		// The add_product() function below is located in /plugins/woocommerce/includes/abstracts/abstract_wc_order.php
 		foreach ($post_id_items as $post_id_item) {
@@ -296,10 +299,13 @@ class get_data_local
 		}
 		$order->set_address($address_billing, 'billing');
 		$order->set_address($address_Shipping, 'shipping');
+		//$order->set_customer_id($userId); // Set user ID
 		//
+		//add_filter('woocommerce_new_order_email_allows_resend', '__return_false' );
 		$order->calculate_totals();
 
-		$order->update_status("completed", 'Imported order', TRUE);
+		//$order->update_status("processing", 'Imported order', TRUE);
+		//$order_id = $order->save();
 		update_post_meta($order->get_id(), 'shopflix', 'shopflix');
 
 		$woo_order_id = $order->get_id();
@@ -459,7 +465,49 @@ class get_data_local
 				if ($rowcount > 0) {
 
 					foreach ($post_id as $post_id_order) {
-						if ($post_id_order->track_number) {
+						if ($post_id_order->track_number == 0) {
+							$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+							$connector = new Connector($marketplaceapisettings_options['username_4'], $marketplaceapisettings_options['password_5'], $marketplaceapisettings_options['api_url_3']);
+							try {
+								$voucher = $connector->createVoucher($shipmentId);
+								$voucher = $voucher['voucher']['ShipmentNumber'];
+							} catch (Exception $e) {
+								$voucher = $connector->getVoucher($shipmentId);
+							}
+							if ($voucher) {
+								$trackingUrl = $connector->getShipmentUrl($shipmentId);
+								$track_number = $voucher;
+								global $table_prefix, $wpdb;
+								$tblname = 'onecode_shopflix_shippment_track';
+								$wp_track_table = $table_prefix . "$tblname";
+								$sql = "UPDATE " . $wp_track_table . " SET `track_number` = " . $track_number . ",  `track_url` = " . $trackingUrl . "  WHERE `parent_id` = " . $shipmentId . ";";
+								$rez = $wpdb->query($sql);
+							}
+
+							$voucherPdf = $connector->printVoucher($voucher, $print_format);
+							$fileContent = base64_decode($voucherPdf['Voucher']);
+							$DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
+							$pdf_base64 = $DOCUMENT_ROOT . '/wp-content/uploads/' . $voucher . '.pdf';
+							$url_base64 = get_site_url() . '/wp-content/uploads/' . $voucher . '.pdf';
+							$content = [
+								"type" => "string",
+								"value" => $fileContent,
+								"rm" => true
+							];
+
+
+
+							$currentdate = date('d-m-Y_H-i-s');
+							$id = 1;
+							$DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
+							$filename = "id_" . $id . "_" . $currentdate . ".pdf";
+							$result = file_put_contents($pdf_base64, $fileContent);
+
+
+
+							return $url_base64;
+						} else {
+
 
 							$connector = new Connector($marketplaceapisettings_options['username_4'], $marketplaceapisettings_options['password_5'], $marketplaceapisettings_options['api_url_3']);
 							$voucherPdf = $connector->printVoucher($post_id_order->track_number, $print_format);
@@ -484,9 +532,6 @@ class get_data_local
 
 
 							return $url_base64;
-						} else {
-
-							return "errr";
 						}
 					}
 				} else {
