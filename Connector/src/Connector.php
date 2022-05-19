@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Connector.php
  *
@@ -16,6 +17,8 @@ use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\RequestOptions;
 use InvalidArgumentException;
 use Monolog\Handler\StreamHandler;
+use Onecode\ShopFlixConnector\Library\Interfaces\ReturnItemInterface;
+use Onecode\ShopFlixConnector\Library\Interfaces\ReturnOrderInterface;
 use Psr\Http\Message\RequestInterface;
 use Spyrmp\JsonSerializerDeserializer\Json;
 use Onecode\ShopFlixConnector\Library\Interfaces\AddressInterface;
@@ -53,6 +56,11 @@ class Connector
     const SHOPFLIX_COMPANY_VAT_NUMBER = "119";
     const SHOPFLIX_TAX_OFFICE = "120";
 
+    const SHOPFLIX_RETURN_ORDER_REQUESTED_STATUS = "U";
+    const SHOPFLIX_RETURN_ORDER_ON_WAY_TO_STORE_STATUS = "A";
+    const SHOPFLIX_RETURN_ORDER_RETURNED_DELIVERED_STORE_STATUS = "T";
+    const SHOPFLIX_RETURN_ORDER_RETURNED_APPROVED_TO_STORE_STATUS = "V";
+    const SHOPFLIX_RETURN_ORDER_DECLINED_STATUS = "W";
 
     /**
      * @var Client
@@ -153,10 +161,7 @@ class Connector
         }
 
         return $data;
-
-
     }
-
 
     private function getPageForOrders($query, $die = false): int
     {
@@ -170,7 +175,6 @@ class Connector
         $itemPerPages = $responseObject['params']['items_per_page'];
         $totalItems = $responseObject['params']['total_items'];
         return (int)ceil($totalItems / $itemPerPages);
-
     }
 
     /**
@@ -188,21 +192,21 @@ class Connector
 
             $data = [
                 "order" =>
-                    [
-                        OrderInterface::SHOPFLIX_ORDER_ID => $responseObject['order_id'],
-                        OrderInterface::INCREMENT_ID => $responseObject['order_id'],
-                        OrderInterface::STATE => $this->getState($responseObject['status']),
-                        OrderInterface::STATUS => $this->getStatus($responseObject['status']),
-                        OrderInterface::SUBTOTAL => $responseObject['subtotal'],
-                        OrderInterface::DISCOUNT_AMOUNT => $responseObject['discount'],
-                        OrderInterface::TOTAL_PAID => $responseObject['total'],
-                        OrderInterface::CUSTOMER_EMAIL => $responseObject['email'],
-                        OrderInterface::CUSTOMER_FIRSTNAME => $responseObject['firstname'],
-                        OrderInterface::CUSTOMER_LASTNAME => $responseObject['lastname'],
-                        OrderInterface::CUSTOMER_REMOTE_IP => $responseObject['ip_address'] ?? "",
-                        OrderInterface::CUSTOMER_NOTE => $responseObject['notes'],
-                        OrderInterface::CREATED_AT => $responseObject['timestamp']
-                    ],
+                [
+                    OrderInterface::SHOPFLIX_ORDER_ID => $responseObject['order_id'],
+                    OrderInterface::INCREMENT_ID => $responseObject['order_id'],
+                    OrderInterface::STATE => $this->getState($responseObject['status']),
+                    OrderInterface::STATUS => $this->getStatus($responseObject['status']),
+                    OrderInterface::SUBTOTAL => $responseObject['subtotal'],
+                    OrderInterface::DISCOUNT_AMOUNT => $responseObject['discount'],
+                    OrderInterface::TOTAL_PAID => $responseObject['total'],
+                    OrderInterface::CUSTOMER_EMAIL => $responseObject['order_id'] . "@shopflix.gr",
+                    OrderInterface::CUSTOMER_FIRSTNAME => $responseObject['firstname'],
+                    OrderInterface::CUSTOMER_LASTNAME => $responseObject['lastname'],
+                    OrderInterface::CUSTOMER_REMOTE_IP => $responseObject['ip_address'] ?? "",
+                    OrderInterface::CUSTOMER_NOTE => $responseObject['notes'],
+                    OrderInterface::CREATED_AT => $responseObject['timestamp']
+                ],
                 "addresses" => [
                     [
                         AddressInterface::FIRSTNAME => !empty($responseObject["s_firstname"]) ? $responseObject["s_firstname"] : $responseObject['firstname'],
@@ -212,7 +216,7 @@ class Connector
                         AddressInterface::STREET => $responseObject["s_address"],
                         AddressInterface::ADDRESS_TYPE => "shipping",
                         AddressInterface::CITY => $responseObject['s_city'],
-                        AddressInterface::EMAIL => $responseObject['email'],
+                        AddressInterface::EMAIL => $responseObject['order_id'] . "@shopflix.gr",
                         AddressInterface::COUNTRY_ID => $responseObject['s_country'],
 
                     ],
@@ -224,7 +228,7 @@ class Connector
                         AddressInterface::STREET => $responseObject["b_address"],
                         AddressInterface::ADDRESS_TYPE => "billing",
                         AddressInterface::CITY => $responseObject['b_city'],
-                        AddressInterface::EMAIL => $responseObject['email'],
+                        AddressInterface::EMAIL => $responseObject['order_id'] . "@shopflix.gr",
                         AddressInterface::COUNTRY_ID => $responseObject['b_country'],
                     ]
                 ],
@@ -253,12 +257,15 @@ class Connector
                     ItemInterface::QTY => $product['amount']
                 ];
             }
-
         }
         return $data;
     }
 
-
+    /**
+     * Convert the shopflix status to state flag.
+     * @param $status
+     * @return string|void
+     */
     private function getState($status)
     {
         switch ($status) {
@@ -277,6 +284,11 @@ class Connector
         }
     }
 
+    /**
+     * Convert the shopflix status to status flag.
+     * @param $status
+     * @return string|void
+     */
     private function getStatus($status)
     {
         switch ($status) {
@@ -296,12 +308,10 @@ class Connector
                 return OrderInterface::STATUS_ON_THE_WAY;
             case self::SHOPFLIX_REJECTED_STATUS:
                 return OrderInterface::STATUS_REJECTED;
-
         }
-
     }
 
-    public function getPartialShipped()
+    public function getPartialShipped(): array
     {
 
         return $this->getOrders(
@@ -311,7 +321,7 @@ class Connector
         );
     }
 
-    public function getShipped()
+    public function getShipped(): array
     {
 
         return $this->getOrders(
@@ -321,7 +331,7 @@ class Connector
         );
     }
 
-    public function getCompletedOrders()
+    public function getCompletedOrders(): array
     {
 
         return $this->getOrders(
@@ -332,7 +342,7 @@ class Connector
     }
 
 
-    public function getCancelOrders()
+    public function getCancelOrders(): array
     {
 
         return $this->getOrders(
@@ -343,7 +353,7 @@ class Connector
     }
 
 
-    public function getOnTheWayOrders()
+    public function getOnTheWayOrders(): array
     {
 
         return $this->getOrders(
@@ -361,7 +371,6 @@ class Connector
         $requestData = ["status" => 'G', "notify_user" => 1, "notify_department" => 0, "notify_vendor" => 0];
 
         $this->updateOrder($orderId, $requestData);
-
     }
 
     /**
@@ -381,8 +390,6 @@ class Connector
         } catch (InvalidArgumentException $e) {
             throw new Exception($response->getBody()->getContents());
         }
-
-
     }
 
     /**
@@ -438,7 +445,6 @@ class Connector
         ];
 
         $this->updateOrder($orderId, $requestData);
-
     }
 
     /**
@@ -460,7 +466,9 @@ class Connector
     public function printManifest($shipments)
     {
         $path = $this->_path . "courier";
-        $response = $this->_httpClient->get($path, [
+        $response = $this->_httpClient->get(
+            $path,
+            [
                 "query" => [
                     "custom_manifest" => 1,
                     "shipments" => implode(",", $shipments)
@@ -488,7 +496,6 @@ class Connector
         $response = $this->_httpClient->get($path, ['query' => $query, "debug" => $this->_debug]);
         $content = $response->getBody()->getContents();
         return $this->_jsonSerializer->deserialize($content);
-
     }
 
     private function getPrintQuery($labelFormat, $voucher, $type = "print")
@@ -511,7 +518,6 @@ class Connector
                 break;
         }
         return $query;
-
     }
 
     public function createVoucher($shipmentId)
@@ -554,7 +560,8 @@ class Connector
     public function getShipment($orderId)
     {
         $path = $this->_path . "shipments";
-        $response = $this->_httpClient->get($path, ['query' => ['order_id' => $orderId,
+        $response = $this->_httpClient->get($path, ['query' => [
+            'order_id' => $orderId,
 
         ]]);
         $content = $response->getBody()->getContents();
@@ -563,11 +570,11 @@ class Connector
         foreach ($json['shipments'] as $key => $shipment) {
             $data[$key] = [
                 "shipment" =>
-                    [
-                        ShipmentInterface::INCREMENT_ID => $shipment["shipment_id"],
-                        ShipmentInterface::SHIPMENT_STATUS => $this->getShippingStatus($shipment['status']),
-                        ShipmentInterface::CREATED_AT => $shipment['shipment_timestamp'],
-                    ],
+                [
+                    ShipmentInterface::INCREMENT_ID => $shipment["shipment_id"],
+                    ShipmentInterface::SHIPMENT_STATUS => $this->getShippingStatus($shipment['status']),
+                    ShipmentInterface::CREATED_AT => $shipment['shipment_timestamp'],
+                ],
                 ShipmentInterface::ITEMS => [],
                 ShipmentInterface::TRACKS => [
                     ShipmentTrackInterface::TRACK_NUMBER => $shipment['tracking_number'],
@@ -598,5 +605,211 @@ class Connector
         }
     }
 
-}
+    public function getNewReturnedOrders(): array
+    {
+        return $this->getReturnOrders(self::SHOPFLIX_RETURN_ORDER_REQUESTED_STATUS);
+    }
 
+    private function getReturnOrders($orderStatus, $startTime = false, $endTime = false): array
+    {
+        $data = [];
+
+        $path = $this->_path . "returns";
+        $query = $this->getReturnOrderQueryByStatus($orderStatus, $startTime, $endTime);
+
+
+        for ($page = 1; $page <= $this->getPageForReturnedOrders($query); $page++) {
+            $query['page'] = $page;
+
+            $response = $this->_httpClient->get($path, ['query' => $query]);
+            $responseObject = $this->_jsonSerializer->deserialize($response->getBody()->getContents());
+            foreach ($responseObject['orders'] as $order) {
+                $products = $order['products'];
+                $data[] = $this->getReturnOrderDetail($order['order_id'], $products);
+            }
+        }
+        return $data;
+    }
+
+    private function getReturnOrderQueryByStatus($orderStatus, $startTime, $endTime): array
+    {
+
+        $data = [
+            "status" => $orderStatus
+        ];
+
+        if ($startTime && $endTime) {
+            $data['date_from'] = $startTime;
+            $data['date_to'] = $endTime;
+        }
+
+        return $data;
+    }
+
+    private function getPageForReturnedOrders($query): int
+    {
+        $path = $this->_path . "returns";
+        $response = $this->_httpClient->get($path, ['query' => $query]);
+
+        $responseObject = $this->_jsonSerializer->deserialize($response->getBody()->getContents());
+
+        $itemPerPages = $responseObject['params']['items_per_page'] ?? 1;
+        $totalItems = $responseObject['params']['total_items'] ?? 1;
+        return (int)ceil($totalItems / $itemPerPages);
+    }
+
+    public function getReturnOrderDetail($orderId, $products): array
+    {
+        $data = [];
+        if ($orderId) {
+            $path = $this->_path . "returns/$orderId";
+            $response = $this->_httpClient->get($path);
+            $responseObject = $this->_jsonSerializer->deserialize($response->getBody()->getContents());
+
+            $data = [
+                "return_order" =>
+                [
+                    ReturnOrderInterface::SHOPFLIX_ORDER_ID => $responseObject['order_id'],
+                    ReturnOrderInterface::SHOPFLIX_PARENT_ORDER_ID => $responseObject['return_order_id'],
+                    ReturnOrderInterface::INCREMENT_ID => $responseObject['order_id'],
+                    ReturnOrderInterface::STATE => $this->getReturnState($responseObject['status']),
+                    ReturnOrderInterface::STATUS => $this->getReturnStatus($responseObject['status']),
+                    ReturnOrderInterface::SUBTOTAL => $responseObject['subtotal'],
+                    ReturnOrderInterface::TOTAL_PAID => $responseObject['subtotal'],
+                    ReturnOrderInterface::CUSTOMER_EMAIL =>  $responseObject['order_id'] . "@shopflix.gr",
+                    ReturnOrderInterface::CUSTOMER_FIRSTNAME => $responseObject['firstname'],
+                    ReturnOrderInterface::CUSTOMER_LASTNAME => $responseObject['lastname'],
+                    ReturnOrderInterface::CUSTOMER_REMOTE_IP => $responseObject['ip_address'] ?? "",
+                    ReturnOrderInterface::CUSTOMER_NOTE => $responseObject['notes'],
+                    ReturnOrderInterface::CREATED_AT => $responseObject['timestamp']
+                ],
+                "addresses" => [
+                    [
+                        AddressInterface::FIRSTNAME => !empty($responseObject["s_firstname"]) ? $responseObject["s_firstname"] : $responseObject['firstname'],
+                        AddressInterface::LASTNAME => !empty($responseObject["s_lastname"]) ? $responseObject["s_lastname"] : $responseObject['lastname'],
+                        AddressInterface::POSTCODE => $responseObject["s_zipcode"],
+                        AddressInterface::TELEPHONE => !empty($responseObject["s_phone"]) ? $responseObject["s_phone"] : $responseObject['phone'],
+                        AddressInterface::STREET => $responseObject["s_address"],
+                        AddressInterface::ADDRESS_TYPE => "shipping",
+                        AddressInterface::CITY => $responseObject['s_city'],
+                        AddressInterface::EMAIL => $responseObject['order_id'] . "@shopflix.gr",
+                        AddressInterface::COUNTRY_ID => $responseObject['s_country'],
+
+                    ],
+                    [
+                        AddressInterface::FIRSTNAME => !empty($responseObject["b_firstname"]) ? $responseObject["b_firstname"] : $responseObject['firstname'],
+                        AddressInterface::LASTNAME => !empty($responseObject["b_lastname"]) ? $responseObject["b_lastname"] : $responseObject['lastname'],
+                        AddressInterface::POSTCODE => $responseObject["b_zipcode"],
+                        AddressInterface::TELEPHONE => !empty($responseObject["b_phone"]) ? $responseObject["b_phone"] : $responseObject['phone'],
+                        AddressInterface::STREET => $responseObject["b_address"],
+                        AddressInterface::ADDRESS_TYPE => "billing",
+                        AddressInterface::CITY => $responseObject['b_city'],
+                        AddressInterface::EMAIL => $responseObject['order_id'] . "@shopflix.gr",
+                        AddressInterface::COUNTRY_ID => $responseObject['b_country'],
+                    ]
+                ],
+                "items" => [],
+            ];
+            foreach ($products as $product) {
+                $data["items"][] = [
+                    ReturnItemInterface::SKU => $product['vendor_sku'],
+                    ReturnItemInterface::PRICE => $product['price'],
+                    ReturnItemInterface::QTY => $product['amount'],
+                    ReturnItemInterface::RETURN_REASON => $product['reason_text'],
+                ];
+            }
+        }
+        return $data;
+    }
+
+    public function getReturnState($status)
+    {
+        switch ($status) {
+            case self::SHOPFLIX_RETURN_ORDER_REQUESTED_STATUS:
+            case self::SHOPFLIX_RETURN_ORDER_ON_WAY_TO_STORE_STATUS:
+                return ReturnOrderInterface::STATE_PROCESS_FROM_SHOPFLIX;
+            case self::SHOPFLIX_RETURN_ORDER_RETURNED_DELIVERED_STORE_STATUS:
+                return ReturnOrderInterface::STATE_DELIVERED_TO_THE_STORE;
+            case self::SHOPFLIX_RETURN_ORDER_RETURNED_APPROVED_TO_STORE_STATUS:
+                return ReturnOrderInterface::STATE_APPROVED;
+            case self::SHOPFLIX_RETURN_ORDER_DECLINED_STATUS:
+                return ReturnOrderInterface::STATUS_RETURN_DECLINED;
+        }
+    }
+
+    public function getReturnStatus($status)
+    {
+        switch ($status) {
+            case self::SHOPFLIX_RETURN_ORDER_REQUESTED_STATUS:
+                return ReturnOrderInterface::STATUS_RETURN_REQUESTED;
+            case self::SHOPFLIX_RETURN_ORDER_ON_WAY_TO_STORE_STATUS:
+                return ReturnOrderInterface::STATUS_ON_THE_WAY_TO_THE_STORE;
+            case self::SHOPFLIX_RETURN_ORDER_RETURNED_DELIVERED_STORE_STATUS:
+                return ReturnOrderInterface::STATUS_DELIVERED_TO_THE_STORE;
+            case self::SHOPFLIX_RETURN_ORDER_RETURNED_APPROVED_TO_STORE_STATUS:
+                return ReturnOrderInterface::STATUS_RETURN_APPROVED;
+            case self::SHOPFLIX_RETURN_ORDER_DECLINED_STATUS:
+                return ReturnOrderInterface::STATUS_RETURN_DECLINED;
+        }
+    }
+
+
+
+    public function getDeclinedReturnedOrders(): array
+    {
+        return $this->getReturnOrders(self::SHOPFLIX_RETURN_ORDER_DECLINED_STATUS, $this->_startTime, $this->_endTime);
+    }
+
+    public function getDeliveredToStoreReturnedOrders(): array
+    {
+        return $this->getReturnOrders(self::SHOPFLIX_RETURN_ORDER_RETURNED_DELIVERED_STORE_STATUS, $this->_startTime, $this->_endTime);
+    }
+
+    public function getOnTheWayToStoreReturnedOrders(): array
+    {
+        return $this->getReturnOrders(self::SHOPFLIX_RETURN_ORDER_ON_WAY_TO_STORE_STATUS, $this->_startTime, $this->_endTime);
+    }
+
+    public function getApprovedReturnOrders(): array
+    {
+        return $this->getReturnOrders(self::SHOPFLIX_RETURN_ORDER_RETURNED_APPROVED_TO_STORE_STATUS, $this->_startTime, $this->_endTime);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function approveReturnedOrder($orderId)
+    {
+        $requestData = ["status" => self::SHOPFLIX_RETURN_ORDER_RETURNED_APPROVED_TO_STORE_STATUS];
+
+        $this->updateReturnOrder($orderId, $requestData);
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function updateReturnOrder($orderId, $requestData = [])
+    {
+        $path = $this->_path . "returns/$orderId";
+        $response = $this->_httpClient->put($path, [RequestOptions::JSON => $requestData]);
+        if ($response->getStatusCode() >= 400 && $response->getStatusCode() <= 500) {
+            throw new Exception($response->getBody()->getContents());
+        }
+
+
+        try {
+            $this->_jsonSerializer->deserialize($response->getBody()->getContents());
+        } catch (InvalidArgumentException $e) {
+            throw new Exception($response->getBody()->getContents());
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function declineReturnedOrder($orderId, $message = "")
+    {
+        $requestData = ["status" => self::SHOPFLIX_RETURN_ORDER_DECLINED_STATUS];
+        $this->updateReturnOrder($orderId, $requestData);
+    }
+}

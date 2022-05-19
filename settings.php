@@ -31,9 +31,8 @@ class get_data_local
 				$generate_xml = new XML_generator();
 				$generate_xml->generate_xml();
 			}
+			$auto_orders = $this->auto_woocommerce();
 		}
-
-		//$auto_orders = $this->auto_woocommerce();
 	}
 
 	public function manual_update()
@@ -164,7 +163,7 @@ class get_data_local
 		$wp_track_table = $table_prefix . "$tblname";
 		$tblname_tracks = 'onecode_shopflix_shippment_track';
 		$wp_track_table_tracks = $table_prefix . "$tblname_tracks";
-		$sql = "SELECT * FROM " . $wp_track_table . " LEFT JOIN " . $wp_track_table_tracks . " ON " . $wp_track_table . ".`shipping_id` = " . $wp_track_table_tracks . ".`parent_id`";
+		$sql = "SELECT * FROM " . $wp_track_table . " LEFT JOIN " . $wp_track_table_tracks . " ON " . $wp_track_table . ".`shipping_id` = " . $wp_track_table_tracks . ".`parent_id` ORDER BY `shippment_uni_id` DESC";
 
 		$post_id = $wpdb->get_results($sql);
 
@@ -207,7 +206,8 @@ class get_data_local
 	public function create_order($order_id)
 	{
 
-
+		$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+		$preferred_payment_gateway = $marketplaceapisettings_options['payment_20'];
 		global $table_prefix, $wpdb;
 		$tblname = 'onecode_marketplace_order';
 		$wp_track_table = $table_prefix . "$tblname";
@@ -254,8 +254,33 @@ class get_data_local
 		$default_args = array(
 			'status'        => 'processing',
 		);
-		$order = wc_create_order($default_args);
-		$order->set_customer_id(0);
+		//$order = wc_create_order($default_args);
+		$order = new WC_Order();
+		//$order->set_customer_id(0);
+		$order->set_status("processing");
+
+		foreach (WC()->payment_gateways->payment_gateways() as $method) {
+			if ($method && isset($method->id) && $method->id == $preferred_payment_gateway) {
+				$order->set_payment_method_title($method->get_method_title());
+			}
+		}
+		$order->set_payment_method($preferred_payment_gateway);
+
+		$order->set_billing_first_name($post_id_addresse[1]->firstname);
+		$order->set_billing_last_name($post_id_addresse[1]->lastname);
+		$order->set_billing_address_1($post_id_addresse[1]->street);
+		$order->set_billing_city($post_id_addresse[1]->city);
+		$order->set_billing_postcode($post_id_addresse[1]->postcode);
+		$order->set_billing_email($post_id_addresse[1]->email);
+		$order->set_billing_country("GR");
+
+		$order->set_shipping_first_name($post_id_addresse[1]->firstname);
+		$order->set_shipping_last_name($post_id_addresse[1]->lastname);
+		$order->set_shipping_address_1($post_id_addresse[1]->street);
+		$order->set_shipping_city($post_id_addresse[1]->city);
+		$order->set_shipping_postcode($post_id_addresse[1]->postcode);
+		$order->set_shipping_country("GR");
+
 
 		// The add_product() function below is located in /plugins/woocommerce/includes/abstracts/abstract_wc_order.php
 		foreach ($post_id_items as $post_id_item) {
@@ -276,6 +301,8 @@ class get_data_local
 					if ($membership['sku'] == $post_id_item->sku) {
 						$variationID = $membership['variation_id'];
 						$variationsArray['variation'] = $membership['attributes'];
+						$variationsArray['subtotal'] = $post_id_item->price;
+						$variationsArray['total'] = $post_id_item->price;
 					}
 				}
 
@@ -290,15 +317,16 @@ class get_data_local
 				$quantity = 1;
 
 				$args = array(
-					'variation' => array('attribute_color' => 'red'),
+					'subtotal' =>  $post_id_item->price,
+					'total' =>  $post_id_item->price,
+					'quantity'     => $post_id_item->qnt,
 				);
 
 
-				$order->add_product($product, $post_id_item->qnt); // This is an existing SIMPLE product
+				$order->add_product($product, $post_id_item->qnt, $args); // This is an existing SIMPLE product
 			}
 		}
-		$order->set_address($address_billing, 'billing');
-		$order->set_address($address_Shipping, 'shipping');
+
 		//$order->set_customer_id($userId); // Set user ID
 		//
 		//add_filter('woocommerce_new_order_email_allows_resend', '__return_false' );
@@ -306,6 +334,8 @@ class get_data_local
 
 		//$order->update_status("processing", 'Imported order', TRUE);
 		//$order_id = $order->save();
+		//
+		$order->save();
 		update_post_meta($order->get_id(), 'shopflix', 'shopflix');
 
 		$woo_order_id = $order->get_id();
@@ -313,7 +343,8 @@ class get_data_local
 		$sql = "UPDATE " . $wp_track_table . " SET `woocommerce_orderid` = " . $woo_order_id . ", `state` = 'picking'  WHERE `marketplace_order_id` = " . $order_id . ";";
 
 		$rez = $wpdb->query($sql);
-		$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
+
+
 		$connector = new Connector($marketplaceapisettings_options['username_4'], $marketplaceapisettings_options['password_5'], $marketplaceapisettings_options['api_url_3']);
 
 		$data = $connector->picking($order_id);
@@ -371,7 +402,7 @@ class get_data_local
 		global $table_prefix, $wpdb;
 		$tblname_post = 'onecode_marketplace_order';
 		$wp_track_table_post = $table_prefix . "$tblname_post";
-		$sql_order = "SELECT * FROM " . $wp_track_table_post . " WHERE `state` = 'picking'";
+		$sql_order = "SELECT * FROM " . $wp_track_table_post . " WHERE `state` = 'picking' ";
 		$post_id = $wpdb->get_results($sql_order);
 
 		$tblname = 'onecode_shopflix_shippment';
@@ -447,7 +478,7 @@ class get_data_local
 			$print_format = $marketplaceapisettings_options['print_19'];
 		} else {
 			//$ean =  get_post_meta($varid, 'ean_shopflix', true);
-			$print_format = "pdf";
+			//$print_format = "pdf";
 		}
 
 		try {
@@ -465,7 +496,7 @@ class get_data_local
 				if ($rowcount > 0) {
 
 					foreach ($post_id as $post_id_order) {
-						if ($post_id_order->track_number == 0) {
+						if (strlen($post_id_order->track_number) == 0) {
 							$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name');
 							$connector = new Connector($marketplaceapisettings_options['username_4'], $marketplaceapisettings_options['password_5'], $marketplaceapisettings_options['api_url_3']);
 							try {
@@ -488,7 +519,7 @@ class get_data_local
 							$fileContent = base64_decode($voucherPdf['Voucher']);
 							$DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
 							$pdf_base64 = $DOCUMENT_ROOT . '/wp-content/uploads/' . $voucher . '.pdf';
-							$url_base64 = get_site_url() . '/wp-content/uploads/' . $voucher . '.pdf';
+							$url_base64 = get_site_url() . '/wp-content/uploads/' . $voucher . 'pdf';
 							$content = [
 								"type" => "string",
 								"value" => $fileContent,
@@ -520,6 +551,13 @@ class get_data_local
 								"value" => $fileContent,
 								"rm" => true
 							];
+							$trackingUrl = $connector->getShipmentUrl($shipmentId);
+
+							global $table_prefix, $wpdb;
+							$tblname = 'onecode_shopflix_shippment_track';
+							$wp_track_table = $table_prefix . "$tblname";
+							$sql = "UPDATE " . $wp_track_table . " SET `track_number` = " . $post_id_order->track_number . ",  `track_url` = " . $trackingUrl . "  WHERE `parent_id` = " . $shipmentId . ";";
+							$rez = $wpdb->query($sql);
 
 
 
@@ -528,6 +566,8 @@ class get_data_local
 							$DOCUMENT_ROOT = $_SERVER['DOCUMENT_ROOT'];
 							$filename = "id_" . $id . "_" . $currentdate . ".pdf";
 							$result = file_put_contents($pdf_base64, $fileContent);
+
+
 
 
 
@@ -544,15 +584,15 @@ class get_data_local
 					} catch (Exception $e) {
 						$voucher = $connector->getVoucher($shipmentId);
 					}
-					if ($voucher) {
-						$trackingUrl = $connector->getShipmentUrl($shipmentId);
-						$track_number = $voucher;
-						global $table_prefix, $wpdb;
-						$tblname = 'onecode_shopflix_shippment_track';
-						$wp_track_table = $table_prefix . "$tblname";
-						$sql = "UPDATE " . $wp_track_table . " SET `track_number` = " . $track_number . ",  `track_url` = " . $trackingUrl . "  WHERE `parent_id` = " . $shipmentId . ";";
-						$rez = $wpdb->query($sql);
-					}
+
+					$trackingUrl = $connector->getShipmentUrl($shipmentId);
+					$track_number = $voucher;
+					global $table_prefix, $wpdb;
+					$tblname = 'onecode_shopflix_shippment_track';
+					$wp_track_table = $table_prefix . "$tblname";
+					$sqls = "UPDATE " . $wp_track_table . " SET `track_number` = " . $track_number . ",  `track_url` = '" . $trackingUrl . "'  WHERE `parent_id` = " . $shipmentId . ";";
+					$wpdb->query($sqls);
+					//UPDATE `L9oTid50_onecode_shopflix_shippment_track` SET `track_number` = '2' WHERE `L9oTid50_onecode_shopflix_shippment_track`.`uni_id` = 12;
 
 					$voucherPdf = $connector->printVoucher($voucher, $print_format);
 					$fileContent = base64_decode($voucherPdf['Voucher']);

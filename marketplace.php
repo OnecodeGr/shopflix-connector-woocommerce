@@ -6,7 +6,7 @@
  * Description: This is a connector with marketplace api
  * Author: Nikos Ziozas
  * Author URI: http://www.zonepage.gr/
- * Version: 1.1.4
+ * Version: 1.1.3
  * Text Domain: wc-marketplace-api
  * Domain Path: /languages/
  *
@@ -991,7 +991,7 @@ class MarketPlaceApi
 					success: function(data) {
 						//Do something with the result from server
 						console.log(data);
-						//location.reload();
+						location.reload();
 
 
 					}
@@ -1019,7 +1019,7 @@ class MarketPlaceApi
 					success: function(data) {
 						//Do something with the result from server
 						console.log(data);
-						//location.reload();
+						location.reload();
 
 
 					}
@@ -2095,7 +2095,7 @@ class MarketPlaceApiSettings
 
 								} else {
 
-									items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)" >Print Voucher</a></td></tr>';
+									items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)">Print Voucher</a></td></tr>';
 
 								}
 							<?php
@@ -2127,7 +2127,7 @@ class MarketPlaceApiSettings
 						//Do something with the result from server
 
 						console.log(data);
-						window.location = data;
+						window.open(data);
 						//location.reload();
 
 
@@ -2175,6 +2175,8 @@ class MarketPlaceApiSettings
 			<p></p>
 			<div class="modals"></div>
 			<div class="row">
+
+
 				<div class="col-md-12">
 					<table class="table">
 						<thead>
