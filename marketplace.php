@@ -6,7 +6,7 @@
  * Description: This is a connector with marketplace api
  * Author: Nikos Ziozas
  * Author URI: http://www.zonepage.gr/
- * Version: 1.1.3
+ * Version: 1.1.4
  * Text Domain: wc-marketplace-api
  * Domain Path: /languages/
  *
@@ -1535,7 +1535,7 @@ class MarketPlaceApiSettings
 	public function marketplaceapisettings_create_admin_page()
 	{
 		$cron = new get_data_local();
-		$cron->cron_jobs();
+		//$cron->cron_jobs();
 		$this->marketplaceapisettings_options = get_option('marketplaceapisettings_option_name'); ?>
 
 		<div class="wrap">
@@ -1668,18 +1668,25 @@ class MarketPlaceApiSettings
 		);
 
 		add_settings_field(
-			'hidden_fordel_8', // id
-			'XML αρχεία', // title
-			array($this, 'hidden_fordel_8_callback'), // callback
+			'print_19', // id
+			'Select Voucher Print', // title
+			array($this, 'print_19_callback'), // callback
 			'marketplaceapisettings-admin', // page
 			'marketplaceapisettings_setting_section' // section
 		);
 
+		add_settings_field(
+			'payment_20', // id
+			'Select Default Payment', // title
+			array($this, 'payment_20_callback'), // callback
+			'marketplaceapisettings-admin', // page
+			'marketplaceapisettings_setting_section' // section
+		);
 
 		add_settings_field(
-			'print_19', // id
-			'Select Voucher Print', // title
-			array($this, 'print_19_callback'), // callback
+			'hidden_fordel_8', // id
+			'XML αρχεία', // title
+			array($this, 'hidden_fordel_8_callback'), // callback
 			'marketplaceapisettings-admin', // page
 			'marketplaceapisettings_setting_section' // section
 		);
@@ -1737,6 +1744,11 @@ class MarketPlaceApiSettings
 
 		if (isset($input['print_19'])) {
 			$sanitary_values['print_19'] = $input['print_19'];
+		}
+
+
+		if (isset($input['payment_20'])) {
+			$sanitary_values['payment_20'] = $input['payment_20'];
 		}
 
 		if (isset($input['manufacturer_10'])) {
@@ -1909,58 +1921,88 @@ class MarketPlaceApiSettings
 
 		public function print_19_callback()
 		{
+
+
+
+			?>
+
+		<select name="marketplaceapisettings_option_name[print_19]" id="print_19">
+			<?php $selected = (isset($this->marketplaceapisettings_options['print_19']) && $this->marketplaceapisettings_options['print_19'] === 'pdf') ? 'selected' : ''; ?>
+			<option value="pdf" <?php echo $selected; ?>>Courier Center Labeled</option>
+			<?php $selected = (isset($this->marketplaceapisettings_options['print_19']) && $this->marketplaceapisettings_options['print_19'] === 'clean') ? 'selected' : ''; ?>
+			<option value="clean" <?php echo $selected; ?>>Courier Center Standard</option>
+			<?php $selected = (isset($this->marketplaceapisettings_options['print_19']) && $this->marketplaceapisettings_options['print_19'] === 'singleclean') ? 'selected' : ''; ?>
+			<option value="singleclean" <?php echo $selected; ?>>Courier Center Standard ( 1 tracking voucher per page )</option>
+			<?php $selected = (isset($this->marketplaceapisettings_options['print_19']) && $this->marketplaceapisettings_options['print_19'] === 'singlepdf') ? 'selected' : ''; ?>
+			<option value="singlepdf" <?php echo $selected; ?>>Courier Center Labeled ( 1 tracking voucher per page )</option>
+
+			<?php $selected = (isset($this->marketplaceapisettings_options['print_19']) && $this->marketplaceapisettings_options['print_19'] === 'singlepdf_100x150') ? 'selected' : ''; ?>
+			<option value="singlepdf_100x150" <?php echo $selected; ?>>SHOPFLIX Labeled 100x150</option>
+			<?php $selected = (isset($this->marketplaceapisettings_options['print_19']) && $this->marketplaceapisettings_options['print_19'] === 'singlepdf_100x170') ? 'selected' : ''; ?>
+			<option value="singlepdf_100x170" <?php echo $selected; ?>>SHOPFLIX Labeled 100x170</option>
+
+
+		</select>
+
+
+	<?php
+		}
+
+		public function payment_20_callback()
+		{
+
+
+
+	?>
+		<select name="marketplaceapisettings_option_name[payment_20]" id="payment_20">
+
+			<?php
+
+			foreach (WC()->payment_gateways->payment_gateways() as $method) {
+			?>
+				<?php $selected = (isset($this->marketplaceapisettings_options['payment_20']) && $this->marketplaceapisettings_options['payment_20'] === $method->id) ? 'selected' : '';
+
+				var_dump($this->marketplaceapisettings_options['payment_20']); ?>
+				<option value="<?php echo $method->id ?>" <?php echo $selected; ?>><?php echo $method->get_method_title() ?></option>
+
+			<?php
+			}
+
+			echo '</select>';
+		}
+
+
+		public function manufacturer_10_callback()
+		{
+
 			$meta_keys = get_meta_keys();
-			if (isset($this->marketplaceapisettings_options['print_19'])) {
-				$custom_mpn = $this->marketplaceapisettings_options['print_19'];
+			if (isset($this->marketplaceapisettings_options['manufacturer_10'])) {
+				$custom_mpn = $this->marketplaceapisettings_options['manufacturer_10'];
 			}
 
 
 
-			echo '<select  name="marketplaceapisettings_option_name[print_19]" id="print_19">';
-			echo "<option value='pdf'>Courier Center Labeled</option>";
-			echo "<option value='clean'>Courier Center Standard</option>";
-			echo "<option value='singleclean'>Courier Center Standard ( 1 tracking voucher per page )</option>";
-			echo "<option value='singlepdf'>Courier Center Labeled ( 1 tracking voucher per page )</option>";
-			echo "<option value='singlepdf_100x150'>SHOPFLIX Labeled 100x150</option>";
-			echo "<option value='singlepdf_100x170'>SHOPFLIX Labeled 100x170</option>";
+			echo '<select  name="marketplaceapisettings_option_name[manufacturer_10]" id="manufacturer_10">';
+			echo "<option value='0'>" . __('-Default-', 'shopflix-woocommerce-feed') . "</option>";
+
+			foreach ($meta_keys as $key => $metaKey) {
+				$selected = false;
+				if ($custom_mpn == $metaKey) {
+					$selected = true;
+				}
+
+				echo "<option value='" . esc_html($metaKey) . "' " . selected($selected, true, false) . ">" . esc_html($metaKey) . "</option>";
+			}
 			echo '</select>';
 
 
 			?> <?php
 			}
+		}
+		if (is_admin())
+			$marketplaceapisettings = new MarketPlaceApiSettings();
 
-
-			public function manufacturer_10_callback()
-			{
-
-				$meta_keys = get_meta_keys();
-				if (isset($this->marketplaceapisettings_options['manufacturer_10'])) {
-					$custom_mpn = $this->marketplaceapisettings_options['manufacturer_10'];
-				}
-
-
-
-				echo '<select  name="marketplaceapisettings_option_name[manufacturer_10]" id="manufacturer_10">';
-				echo "<option value='0'>" . __('-Default-', 'shopflix-woocommerce-feed') . "</option>";
-
-				foreach ($meta_keys as $key => $metaKey) {
-					$selected = false;
-					if ($custom_mpn == $metaKey) {
-						$selected = true;
-					}
-
-					echo "<option value='" . esc_html($metaKey) . "' " . selected($selected, true, false) . ">" . esc_html($metaKey) . "</option>";
-				}
-				echo '</select>';
-
-
-				?> <?php
-				}
-			}
-			if (is_admin())
-				$marketplaceapisettings = new MarketPlaceApiSettings();
-
-			/* 
+		/* 
  * Retrieve this value with:
  * $marketplaceapisettings_options = get_option( 'marketplaceapisettings_option_name' ); // Array of All Options
  * $enable_market_place_0 = $marketplaceapisettings_options['enable_market_place_0']; // Enable Market Place
@@ -1974,252 +2016,252 @@ class MarketPlaceApiSettings
  */
 
 
-			class Shopflix_shiiping
+		class Shopflix_shiiping
+		{
+			private $marketplaceapisettings_options;
+
+
+
+			public function __construct()
 			{
-				private $marketplaceapisettings_options;
+				add_action('admin_menu', array($this, 'market_place_api_shopping_add_plugin_page'));
+				//add_action('admin_enqueue_scripts', array($this, 'cstm_css_and_js'));
+				//add_action('admin_init', array($this, 'marketplaceapishoppings_page_init'));
+			}
 
 
 
-				public function __construct()
-				{
-					add_action('admin_menu', array($this, 'market_place_api_shopping_add_plugin_page'));
-					//add_action('admin_enqueue_scripts', array($this, 'cstm_css_and_js'));
-					//add_action('admin_init', array($this, 'marketplaceapishoppings_page_init'));
+			public function market_place_api_shopping_add_plugin_page()
+			{
+				add_submenu_page(
+					'market-place-api',
+					'ShopFlix Shipping', // page_title
+					'ShopFlix Shippings', // menu_title
+					'manage_options', // capability
+					'shopflix-shippings', // menu_slug
+					array($this, 'marketplaceapishippings_create_admin_page') // function
+				);
+			}
+
+			public function marketplaceapishippings_create_admin_page()
+			{
+
+				$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name'); // Array of All Options
+
+				$var_ecom_enable = "disable";
+
+
+				if (array_key_exists('enable_market_place_0', $marketplaceapisettings_options)) {
+					$var_ecom_enable = "enable";
+				} // Enable Market Place
+
+
+
+
+
+				//$api->generate_xml();
+
+
+
+
+				?>
+
+			<style>
+				a.disable {
+					cursor: not-allowed;
+					opacity: 0.5;
+
+
+				}
+
+				a.details {
+					font-weight: bold;
+					background: #949494;
+					color: white;
+					font-weight: bold;
+					padding: 6px 14px;
+				}
+
+				a.accept.enable {
+
+					background: #07e842;
+					color: white;
+					font-weight: bold;
+					padding: 6px 14px;
+					text-shadow: -1px 0px 4px #929292;
+				}
+
+				a.reject.enable {
+
+					background: #e80707;
+					color: white;
+					font-weight: bold;
+					text-shadow: -1px 0px 4px #929292;
+					padding: 6px 14px;
+				}
+			</style>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+			<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+			<script>
+				jQuery(document).ready(function($) {
+
+
+
+
+					// Some event will trigger the ajax call, you can push whatever data to the server, 
+					// simply passing it to the "data" object in ajax call
+					$.ajax({
+						url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
+						type: 'POST',
+						data: {
+							action: 'myaction_shipping', // this is the function in your functions.php that will be triggered
+							name: 'John',
+							age: '38'
+						},
+						success: function(data) {
+							//Do something with the result from server
+							console.log(data);
+							var json = JSON.parse(data);
+							var items = '';
+							var items_modals = '';
+
+							$.each(json, function(index, item) {
+
+
+								<?php if ($var_ecom_enable === "enable") { ?>
+
+
+									if (item.track_number === "") {
+										items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)" >Print Voucher</a></td></tr>';
+
+
+									} else {
+
+										items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)">Print Voucher</a></td></tr>';
+
+									}
+								<?php
+								} ?>
+							});
+							$(".table tbody").append(items);
+							$(".modals").append(items_modals);
+
+
+						}
+					});
+				});
+
+				function printvpucher(elm) {
+
+
+					console.log(elm.getAttribute('order'));
+
+
+					jQuery.ajax({
+						url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
+						type: 'POST',
+						data: {
+							action: 'print_voucher', // this is the function in your functions.php that will be triggered
+							order: elm.getAttribute('order'),
+
+						},
+						success: function(data) {
+							//Do something with the result from server
+
+							console.log(data);
+							window.open(data);
+							//location.reload();
+
+
+						}
+					});
+
+
 				}
 
 
 
-				public function market_place_api_shopping_add_plugin_page()
-				{
-					add_submenu_page(
-						'market-place-api',
-						'ShopFlix Shipping', // page_title
-						'ShopFlix Shippings', // menu_title
-						'manage_options', // capability
-						'shopflix-shippings', // menu_slug
-						array($this, 'marketplaceapishippings_create_admin_page') // function
-					);
+				function rejectorder(elm) {
+
+
+					message = jQuery('#reject_reason' + elm.getAttribute('order')).val()
+
+					jQuery.ajax({
+						url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
+						type: 'POST',
+						data: {
+							action: 'reject', // this is the function in your functions.php that will be triggered
+							order: elm.getAttribute('order'),
+							message: message,
+
+						},
+						success: function(data) {
+							//Do something with the result from server
+							console.log(data);
+							//location.reload();
+
+
+						}
+					});
+
+
 				}
+			</script>
+			<?php $cron = new get_data_local();
+				$cron->get_shippings();
+				//var_dump($cron->get_complete());
+			?>
 
-				public function marketplaceapishippings_create_admin_page()
-				{
-
-					$marketplaceapisettings_options = get_option('marketplaceapisettings_option_name'); // Array of All Options
-
-					$var_ecom_enable = "disable";
-
-
-					if (array_key_exists('enable_market_place_0', $marketplaceapisettings_options)) {
-						$var_ecom_enable = "enable";
-					} // Enable Market Place
-
+			<div class="wrap">
+				<h2>ShopFlix Orders</h2>
+				<p></p>
+				<div class="modals"></div>
+				<div class="row">
 
 
+					<div class="col-md-12">
+						<table class="table">
+							<thead>
+								<tr>
+									<th scope="col">#</th>
+									<th scope="col">OrderID</th>
+									<th scope="col">Shipping Id</th>
+									<th scope="col">First Name</th>
+									<th scope="col">Last Name</th>
+									<th scope="col">Status</th>
+									<th scope="col">Track Number</th>
+									<th scope="col">Track Number</th>
+									<th scope="col">Voucher</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
 
-
-					//$api->generate_xml();
-
-
-
-
-					?>
-
-		<style>
-			a.disable {
-				cursor: not-allowed;
-				opacity: 0.5;
-
-
-			}
-
-			a.details {
-				font-weight: bold;
-				background: #949494;
-				color: white;
-				font-weight: bold;
-				padding: 6px 14px;
-			}
-
-			a.accept.enable {
-
-				background: #07e842;
-				color: white;
-				font-weight: bold;
-				padding: 6px 14px;
-				text-shadow: -1px 0px 4px #929292;
-			}
-
-			a.reject.enable {
-
-				background: #e80707;
-				color: white;
-				font-weight: bold;
-				text-shadow: -1px 0px 4px #929292;
-				padding: 6px 14px;
-			}
-		</style>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
-		<script>
-			jQuery(document).ready(function($) {
-
-
-
-
-				// Some event will trigger the ajax call, you can push whatever data to the server, 
-				// simply passing it to the "data" object in ajax call
-				$.ajax({
-					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
-					type: 'POST',
-					data: {
-						action: 'myaction_shipping', // this is the function in your functions.php that will be triggered
-						name: 'John',
-						age: '38'
-					},
-					success: function(data) {
-						//Do something with the result from server
-						console.log(data);
-						var json = JSON.parse(data);
-						var items = '';
-						var items_modals = '';
-
-						$.each(json, function(index, item) {
-
-
-							<?php if ($var_ecom_enable === "enable") { ?>
-
-
-								if (item.track_number === "") {
-									items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)" >Print Voucher</a></td></tr>';
-
-
-								} else {
-
-									items += '<tr>      <th scope="row">' + item.shippment_uni_id + '</th>       <td>' + item.order_id + '</td>       <td>' + item.shipping_id + '</td> <td>' + item.firstname + '</td>       <td>' + item.lastname + '</td>   <td>' + item.statu + '</td>  <td>' + item.track_number + '</td> <td><a href="' + item.track_url + '" target="_blank">Tracking Link</a></td><td><a class="accept <?php echo $var_ecom_enable ?>" href="javascript:void(0)" order="' + item.shipping_id + '" onclick="printvpucher(this)">Print Voucher</a></td></tr>';
-
-								}
-							<?php
-							} ?>
-						});
-						$(".table tbody").append(items);
-						$(".modals").append(items_modals);
-
-
-					}
-				});
-			});
-
-			function printvpucher(elm) {
-
-
-				console.log(elm.getAttribute('order'));
-
-
-				jQuery.ajax({
-					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
-					type: 'POST',
-					data: {
-						action: 'print_voucher', // this is the function in your functions.php that will be triggered
-						order: elm.getAttribute('order'),
-
-					},
-					success: function(data) {
-						//Do something with the result from server
-
-						console.log(data);
-						window.open(data);
-						//location.reload();
-
-
-					}
-				});
-
-
-			}
-
-
-
-			function rejectorder(elm) {
-
-
-				message = jQuery('#reject_reason' + elm.getAttribute('order')).val()
-
-				jQuery.ajax({
-					url: "/wp-admin/admin-ajax.php", // this is the object instantiated in wp_localize_script function
-					type: 'POST',
-					data: {
-						action: 'reject', // this is the function in your functions.php that will be triggered
-						order: elm.getAttribute('order'),
-						message: message,
-
-					},
-					success: function(data) {
-						//Do something with the result from server
-						console.log(data);
-						//location.reload();
-
-
-					}
-				});
-
-
-			}
-		</script>
-		<?php $cron = new get_data_local();
-					$cron->get_shippings();
-					//var_dump($cron->get_complete());
-		?>
-
-		<div class="wrap">
-			<h2>ShopFlix Orders</h2>
-			<p></p>
-			<div class="modals"></div>
-			<div class="row">
-
-
-				<div class="col-md-12">
-					<table class="table">
-						<thead>
-							<tr>
-								<th scope="col">#</th>
-								<th scope="col">OrderID</th>
-								<th scope="col">Shipping Id</th>
-								<th scope="col">First Name</th>
-								<th scope="col">Last Name</th>
-								<th scope="col">Status</th>
-								<th scope="col">Track Number</th>
-								<th scope="col">Track Number</th>
-								<th scope="col">Voucher</th>
-							</tr>
-						</thead>
-						<tbody>
-						</tbody>
-					</table>
 				</div>
 
-			</div>
 
+				<p></p>
+				<?php settings_errors(); ?>
 
-			<p></p>
-			<?php settings_errors(); ?>
+				<div class="row">
+					<div class="col-md-6">
 
-			<div class="row">
-				<div class="col-md-6">
+					</div>
 
 				</div>
 
 			</div>
-
-		</div>
-<?php
-				}
-
-				public function marketplaceapishoppings_page_init()
-				{
-				}
+	<?php
 			}
 
+			public function marketplaceapishoppings_page_init()
+			{
+			}
+		}
 
-			if (is_admin())
-				$marketplaceapishippings = new Shopflix_shiiping();
-?>
+
+		if (is_admin())
+			$marketplaceapishippings = new Shopflix_shiiping();
+	?>

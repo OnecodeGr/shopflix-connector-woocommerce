@@ -41,6 +41,7 @@ class get_data_local
 		if (isset($marketplaceapisettings_options['genable_market_place_0'])) {
 			$this->update_data();
 		}
+		$auto_orders = $this->auto_woocommerce();
 		if (isset($marketplaceapisettings_options['generate_xml_6'])) {
 			$generate_xml = new XML_generator();
 			$generate_xml->generate_xml();
