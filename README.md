@@ -1,4 +1,7 @@
-# shopflix-connect [![GitHub version](https://badge.fury.io/gh/OnecodeGr%2Fshopflix-connector-woocommerce.svg)](https://badge.fury.io/gh/OnecodeGr%2Fshopflix-connector-woocommerce) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
+# shopflix-connect 
+
+[![GitHub version](https://badge.fury.io/gh/OnecodeGr%2Fshopflix-connector-woocommerce.svg)](https://badge.fury.io/gh/OnecodeGr%2Fshopflix-connector-woocommerce)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
 
 ## 1. Πως να εγκαταστήσετε Plugin ShopFlix.
 
